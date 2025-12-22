@@ -16,10 +16,12 @@ export function SocketProvider({ children }) {
       if (import.meta.env.VITE_SOCKET_URL) {
         return import.meta.env.VITE_SOCKET_URL;
       }
-      // If accessed via network IP, use that IP for backend too
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      // For production (Azure Container Apps), use same origin
+      // For local dev, check if running on localhost with port
+      const isLocalDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
       const hostname = window.location.hostname;
-      return `${window.location.protocol}//${hostname}:8080`;
+      const port = isLocalDev ? ':8080' : '';
+      return `${window.location.protocol}//${hostname}${port}`;
     };
 
     const SOCKET_URL = getSocketUrl();

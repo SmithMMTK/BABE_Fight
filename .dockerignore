@@ -1,0 +1,30 @@
+node_modules
+npm-debug.log
+.git
+.gitignore
+.env
+.vscode
+.DS_Store
+
+# Frontend
+frontend/node_modules
+frontend/dist
+frontend/.vite
+
+# Backend
+backend/node_modules
+backend/data/*.db
+backend/data/*.db-*
+
+# Documentation
+*.md
+!README.md
+
+# Build artifacts
+.deployment
+startup.sh
+oryx-build.sh
+run-local.sh
+
+# Azure
+.azure

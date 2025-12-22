@@ -41,31 +41,28 @@ router.post('/create', async (req, res) => {
     }
 
     // Get existing PINs
-    const existingGames = await db.all('SELECT host_pin, guest_pin FROM games WHERE status = ?', ['active']);
-    const existingPINs = existingGames.flatMap(g => [g.host_pin, g.guest_pin]);
+    const existingPINs = db
+      .prepare('SELECT host_pin, guest_pin FROM games WHERE status = ?')
+      .all('active')
+      .flatMap(g => [g.host_pin, g.guest_pin]);
 
     // Generate unique PINs
     const { hostPin, guestPin } = generateUniquePINs(existingPINs);
 
     // Create game
-    const result = await db.run(`
+    const insertGame = db.prepare(`
       INSERT INTO games (host_pin, guest_pin, course_id, course_name)
       VALUES (?, ?, ?, ?)
-    `, [hostPin, guestPin, courseId, courseName]);
-    
-    console.log('Insert game result:', result);
-    const gameId = result.lastID;
-    console.log('Game ID:', gameId);
-
-    if (!gameId) {
-      throw new Error('Failed to get game ID from insert');
-    }
+    `);
+    const result = insertGame.run(hostPin, guestPin, courseId, courseName);
+    const gameId = result.lastInsertRowid;
 
     // Add host as player
-    await db.run(`
+    const insertPlayer = db.prepare(`
       INSERT INTO players (game_id, username, role)
       VALUES (?, ?, 'host')
-    `, [gameId, hostUsername]);
+    `);
+    insertPlayer.run(gameId, hostUsername);
 
     res.json({
       gameId,
@@ -81,7 +78,7 @@ router.post('/create', async (req, res) => {
 });
 
 // Join game
-router.post('/join', async (req, res) => {
+router.post('/join', (req, res) => {
   try {
     const { pin, username } = req.body;
 
@@ -90,22 +87,20 @@ router.post('/join', async (req, res) => {
     }
 
     // Find game by either host or guest PIN
-    const game = await db.get(
-      'SELECT * FROM games WHERE (host_pin = ? OR guest_pin = ?) AND status = ?',
-      [pin, pin, 'active']
-    );
+    const game = db
+      .prepare('SELECT * FROM games WHERE (host_pin = ? OR guest_pin = ?) AND status = ?')
+      .get(pin, pin, 'active');
 
     if (!game) {
       return res.status(404).json({ error: 'Game not found' });
     }
 
     // Check if username already exists
-    const existingPlayer = await db.get(
-      'SELECT * FROM players WHERE game_id = ? AND username = ?',
-      [game.id, username]
-    );
+    const existingPlayer = db
+      .prepare('SELECT * FROM players WHERE game_id = ? AND username = ?')
+      .get(game.id, username);
 
-    // If player exists, return existing player data
+    // If player exists, return existing player data (ข้อ 6)
     if (existingPlayer) {
       return res.json({
         gameId: game.id,
@@ -122,14 +117,15 @@ router.post('/join', async (req, res) => {
     const role = (pin === game.host_pin) ? 'host' : 'player';
 
     // Add player
-    const result = await db.run(`
+    const insertPlayer = db.prepare(`
       INSERT INTO players (game_id, username, role)
       VALUES (?, ?, ?)
-    `, [game.id, username, role]);
+    `);
+    const result = insertPlayer.run(game.id, username, role);
 
     res.json({
       gameId: game.id,
-      playerId: result.lastID,
+      playerId: result.lastInsertRowid,
       hostPin: game.host_pin,
       guestPin: game.guest_pin,
       courseId: game.course_id,
@@ -143,19 +139,18 @@ router.post('/join', async (req, res) => {
 });
 
 // Get game details
-router.get('/:gameId', async (req, res) => {
+router.get('/:gameId', (req, res) => {
   try {
     const { gameId } = req.params;
 
-    const game = await db.get('SELECT * FROM games WHERE id = ?', [gameId]);
+    const game = db.prepare('SELECT * FROM games WHERE id = ?').get(gameId);
     if (!game) {
       return res.status(404).json({ error: 'Game not found' });
     }
 
-    const players = await db.all(
-      'SELECT id, username, role FROM players WHERE game_id = ? ORDER BY joined_at',
-      [gameId]
-    );
+    const players = db
+      .prepare('SELECT id, username, role FROM players WHERE game_id = ? ORDER BY joined_at')
+      .all(gameId);
 
     res.json({ game, players });
   } catch (error) {
@@ -178,8 +173,8 @@ router.get('/courses/list', async (req, res) => {
   }
 });
 
-// Add player (Host only)
-router.post('/:gameId/players', async (req, res) => {
+// Add player (Host only - ข้อ 3)
+router.post('/:gameId/players', (req, res) => {
   try {
     const { gameId } = req.params;
     const { username, role } = req.body;
@@ -189,24 +184,23 @@ router.post('/:gameId/players', async (req, res) => {
     }
 
     // Check if username already exists
-    const existingPlayer = await db.get(
-      'SELECT * FROM players WHERE game_id = ? AND username = ?',
-      [gameId, username]
-    );
+    const existingPlayer = db
+      .prepare('SELECT * FROM players WHERE game_id = ? AND username = ?')
+      .get(gameId, username);
 
     if (existingPlayer) {
       return res.status(400).json({ error: 'Username already exists' });
     }
 
-    const result = await db.run(`
+    const insertPlayer = db.prepare(`
       INSERT INTO players (game_id, username, role)
       VALUES (?, ?, ?)
-    `, [gameId, username, role]);
+    `);
+    const result = insertPlayer.run(gameId, username, role);
 
-    const newPlayer = await db.get(
-      'SELECT id, username, role FROM players WHERE id = ?',
-      [result.lastID]
-    );
+    const newPlayer = db
+      .prepare('SELECT id, username, role FROM players WHERE id = ?')
+      .get(result.lastInsertRowid);
 
     res.json(newPlayer);
   } catch (error) {
@@ -215,12 +209,12 @@ router.post('/:gameId/players', async (req, res) => {
   }
 });
 
-// Remove player (Host only)
-router.delete('/:gameId/players/:playerId', async (req, res) => {
+// Remove player (Host only - ข้อ 5)
+router.delete('/:gameId/players/:playerId', (req, res) => {
   try {
     const { playerId } = req.params;
 
-    await db.run('DELETE FROM players WHERE id = ?', [playerId]);
+    db.prepare('DELETE FROM players WHERE id = ?').run(playerId);
     res.json({ success: true });
   } catch (error) {
     console.error('Remove player error:', error);
@@ -228,8 +222,8 @@ router.delete('/:gameId/players/:playerId', async (req, res) => {
   }
 });
 
-// Toggle player role (Host only)
-router.patch('/:gameId/players/:playerId/role', async (req, res) => {
+// Toggle player role (Host only - ข้อ 3, 4)
+router.patch('/:gameId/players/:playerId/role', (req, res) => {
   try {
     const { playerId } = req.params;
     const { role } = req.body;
@@ -238,7 +232,7 @@ router.patch('/:gameId/players/:playerId/role', async (req, res) => {
       return res.status(400).json({ error: 'Invalid role' });
     }
 
-    await db.run('UPDATE players SET role = ? WHERE id = ?', [role, playerId]);
+    db.prepare('UPDATE players SET role = ? WHERE id = ?').run(role, playerId);
     res.json({ success: true, role });
   } catch (error) {
     console.error('Toggle role error:', error);
@@ -246,8 +240,8 @@ router.patch('/:gameId/players/:playerId/role', async (req, res) => {
   }
 });
 
-// Update player username
-router.patch('/:gameId/players/:playerId/username', async (req, res) => {
+// Update player username (ข้อ 5 - Guest แก้ชื่อตัวเอง)
+router.patch('/:gameId/players/:playerId/username', (req, res) => {
   try {
     const { playerId } = req.params;
     const { username } = req.body;
@@ -256,7 +250,7 @@ router.patch('/:gameId/players/:playerId/username', async (req, res) => {
       return res.status(400).json({ error: 'Username required' });
     }
 
-    await db.run('UPDATE players SET username = ? WHERE id = ?', [username, playerId]);
+    db.prepare('UPDATE players SET username = ? WHERE id = ?').run(username, playerId);
     res.json({ success: true, username });
   } catch (error) {
     console.error('Update username error:', error);
@@ -265,14 +259,13 @@ router.patch('/:gameId/players/:playerId/username', async (req, res) => {
 });
 
 // Get turbo multipliers for a game
-router.get('/:gameId/turbo', async (req, res) => {
+router.get('/:gameId/turbo', (req, res) => {
   try {
     const { gameId } = req.params;
     
-    const turbos = await db.all(
-      'SELECT hole_number, multiplier FROM game_turbo WHERE game_id = ?',
-      [gameId]
-    );
+    const turbos = db
+      .prepare('SELECT hole_number, multiplier FROM game_turbo WHERE game_id = ?')
+      .all(gameId);
     
     const turboMap = {};
     turbos.forEach(t => {
@@ -287,7 +280,7 @@ router.get('/:gameId/turbo', async (req, res) => {
 });
 
 // Update turbo multiplier for a hole
-router.post('/:gameId/turbo', async (req, res) => {
+router.post('/:gameId/turbo', (req, res) => {
   try {
     const { gameId } = req.params;
     const { holeNumber, multiplier } = req.body;
@@ -296,30 +289,14 @@ router.post('/:gameId/turbo', async (req, res) => {
       return res.status(400).json({ error: 'Missing hole number or multiplier' });
     }
 
-    // Check if using SQL Server or SQLite
-    const isSQL = process.env.DB_TYPE === 'mssql';
+    const stmt = db.prepare(`
+      INSERT INTO game_turbo (game_id, hole_number, multiplier)
+      VALUES (?, ?, ?)
+      ON CONFLICT(game_id, hole_number) 
+      DO UPDATE SET multiplier = ?, updated_at = CURRENT_TIMESTAMP
+    `);
     
-    if (isSQL) {
-      // SQL Server: MERGE statement
-      await db.run(`
-        MERGE INTO game_turbo AS target
-        USING (SELECT ? AS game_id, ? AS hole_number, ? AS multiplier) AS source
-        ON target.game_id = source.game_id AND target.hole_number = source.hole_number
-        WHEN MATCHED THEN
-          UPDATE SET multiplier = source.multiplier, updated_at = GETDATE()
-        WHEN NOT MATCHED THEN
-          INSERT (game_id, hole_number, multiplier) VALUES (source.game_id, source.hole_number, source.multiplier);
-      `, [gameId, holeNumber, multiplier]);
-    } else {
-      // SQLite: ON CONFLICT
-      await db.run(`
-        INSERT INTO game_turbo (game_id, hole_number, multiplier)
-        VALUES (?, ?, ?)
-        ON CONFLICT(game_id, hole_number) 
-        DO UPDATE SET multiplier = ?, updated_at = CURRENT_TIMESTAMP
-      `, [gameId, holeNumber, multiplier, multiplier]);
-    }
-    
+    stmt.run(gameId, holeNumber, multiplier, multiplier);
     res.json({ success: true });
   } catch (error) {
     console.error('Update turbo error:', error);

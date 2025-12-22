@@ -49,15 +49,17 @@ install_dependencies() {
 }
 
 # Check if node_modules exist
+NEEDS_INSTALL=false
 if [ ! -d "node_modules" ] || [ ! -d "backend/node_modules" ] || [ ! -d "frontend/node_modules" ]; then
+    NEEDS_INSTALL=true
+fi
+
+if [ "$NEEDS_INSTALL" = true ]; then
     echo -e "${BLUE}Dependencies not found. Installing...${NC}"
     install_dependencies
 else
-    read -p "Dependencies already installed. Reinstall? (y/N): " -n 1 -r
+    echo -e "${GREEN}✓ Dependencies already installed${NC}"
     echo ""
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        install_dependencies
-    fi
 fi
 
 # Start the application

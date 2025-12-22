@@ -2,11 +2,18 @@
   "name": "babe-fight",
   "version": "1.0.0",
   "description": "Golf Scorecard Tracker - Multi-player real-time scoring",
+  "main": "backend/src/server.js",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
   "scripts": {
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "server": "cd backend && node src/server.js",
     "client": "cd frontend && npm run dev",
-    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install"
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "build": "npm --prefix frontend install && npm --prefix frontend run build && npm --prefix backend install",
+    "start": "node backend/src/server.js"
   },
   "repository": {
     "type": "git",

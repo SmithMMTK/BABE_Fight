@@ -5,10 +5,13 @@ const getApiUrl = () => {
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
-  // If accessed via network IP, use that IP for backend too
+  // For production (Azure Container Apps), use same origin
+  // For local dev, check if running on localhost with port
+  const isLocalDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
   const protocol = window.location.protocol;
   const hostname = window.location.hostname;
-  return `${protocol}//${hostname}:8080/api`;
+  const port = isLocalDev ? ':8080' : '';
+  return `${protocol}//${hostname}${port}/api`;
 };
 
 const API_URL = getApiUrl();
