@@ -10,7 +10,8 @@ function PlayersMenu({
   onAddPlayer,
   onRemovePlayer,
   onToggleRole,
-  onUpdateUsername
+  onUpdateUsername,
+  onClose
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [newPlayerName, setNewPlayerName] = useState('');
@@ -20,8 +21,6 @@ function PlayersMenu({
 
   const currentPlayer = players.find(p => p.id === currentPlayerId);
   const isCurrentPlayerHost = currentPlayer?.role === 'host';
-
-  console.log('PlayersMenu Debug:', { currentPlayerId, players, currentPlayer });
 
   const handleAddPlayer = () => {
     if (!newPlayerName.trim()) return;
@@ -52,18 +51,21 @@ function PlayersMenu({
   };
 
   return (
-    <div className="players-menu">
-      <button 
-        className="players-menu-toggle"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        👥 Players ({players.length})
-      </button>
+    <div className="players-menu-overlay" onClick={onClose}>
+      <div className="players-menu-panel" onClick={(e) => e.stopPropagation()}>
+        <div className="menu-header">
+          <h3>จัดการผู้เล่น</h3>
+          <button 
+            className="btn-close-menu"
+            onClick={onClose}
+            title="ปิด"
+          >
+            ✕
+          </button>
+        </div>
 
-      {isOpen && (
-        <div className="players-menu-dropdown">
-          {/* ข้อ 2: แสดง PINs */}
-          <div className="pins-section">
+        {/* ข้อ 2: แสดง PINs */}
+        <div className="pins-section">
             <div className="pin-item">
               <span className="pin-label">HOST PIN:</span>
               <span className="pin-code">{hostPin}</span>
@@ -106,87 +108,98 @@ function PlayersMenu({
             <h4>รายชื่อผู้เล่น</h4>
             {players.map(player => (
               <div key={player.id} className="player-item">
-                <div className="player-main">
-                  {editingPlayerId === player.id ? (
-                    <div className="edit-username">
-                      <input
-                        type="text"
-                        value={editUsername}
-                        onChange={(e) => setEditUsername(e.target.value)}
-                        className="edit-input"
-                        autoFocus
-                      />
-                      <button 
-                        onClick={() => handleSaveEdit(player.id)}
-                        className="btn-save"
-                      >
-                        ✓
-                      </button>
-                      <button 
-                        onClick={() => setEditingPlayerId(null)}
-                        className="btn-cancel"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="player-info">
-                        <span className="player-username">{player.username}</span>
-                        <span className={`role-badge ${player.role}`}>
-                          {player.role === 'host' ? 'HOST' : 'GUEST'}
+                {editingPlayerId === player.id ? (
+                  <div className="edit-username">
+                    <input
+                      type="text"
+                      value={editUsername}
+                      onChange={(e) => setEditUsername(e.target.value)}
+                      className="edit-input"
+                      autoFocus
+                    />
+                    <button 
+                      onClick={() => handleSaveEdit(player.id)}
+                      className="btn-save"
+                    >
+                      ✓
+                    </button>
+                    <button 
+                      onClick={() => setEditingPlayerId(null)}
+                      className="btn-cancel"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    width: '100%'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <strong style={{ 
+                        fontSize: '18px', 
+                        color: '#000000',
+                        fontWeight: '700'
+                      }}>
+                        {player.username}
+                      </strong>
+                      <span style={{
+                        display: 'inline-block',
+                        padding: '4px 12px',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        fontWeight: '700',
+                        color: 'white',
+                        background: player.role === 'host' ? '#ff9800' : '#3498db'
+                      }}>
+                        {player.role === 'host' ? 'HOST' : 'GUEST'}
+                      </span>
+                      {player.id === currentPlayerId && (
+                        <span style={{ fontSize: '14px', color: '#27ae60', fontWeight: '600' }}>
+                          (คุณ)
                         </span>
-                        {player.id === currentPlayerId && (
-                          <span className="you-badge">(คุณ)</span>
-                        )}
-                      </div>
+                      )}
+                    </div>
 
-                      <div className="player-actions">
-                        {/* HOST แก้ไขได้ทุกคน, GUEST แก้ไขได้เฉพาะตัวเอง */}
-                        {(isCurrentPlayerHost || player.id === currentPlayerId) && (
-                          <button
-                            onClick={() => handleStartEdit(player)}
-                            className="btn-edit"
-                            title="แก้ไขชื่อ"
-                          >
-                            ✏️
-                          </button>
-                        )}
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      {(isCurrentPlayerHost || player.id === currentPlayerId) && (
+                        <button
+                          onClick={() => handleStartEdit(player)}
+                          className="btn-edit"
+                          title="แก้ไขชื่อ"
+                        >
+                          ✏️
+                        </button>
+                      )}
 
-                        {/* HOST controls - Toggle และ Remove */}
-                        {isCurrentPlayerHost && (
-                          <>
-                            {/* Toggle role - ไม่ toggle ตัวเอง */}
-                            {player.id !== currentPlayerId && (
-                              <button
-                                onClick={() => handleToggleRole(player)}
-                                className="btn-toggle"
-                                title="เปลี่ยน Role"
-                              >
-                                🔄
-                              </button>
-                            )}
-                            {/* Remove - ไม่ลบตัวเอง */}
-                            {player.id !== currentPlayerId && (
-                              <button
-                                onClick={() => onRemovePlayer(player.id)}
-                                className="btn-remove"
-                                title="ลบผู้เล่น"
-                              >
-                                🗑️
-                              </button>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    </>
-                  )}
-                </div>
+                      {isCurrentPlayerHost && player.id !== currentPlayerId && (
+                        <button
+                          onClick={() => handleToggleRole(player)}
+                          className="btn-toggle"
+                          title="เปลี่ยน Role"
+                        >
+                          🔄
+                        </button>
+                      )}
+
+                      {isCurrentPlayerHost && player.id !== currentPlayerId && (
+                        <button
+                          onClick={() => onRemovePlayer(player.id)}
+                          className="btn-remove"
+                          title="ลบผู้เล่น"
+                        >
+                          🗑️
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

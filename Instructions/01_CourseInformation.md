@@ -43,3 +43,14 @@ Step 1: Load latest course information from https://raw.githubusercontent.com/Sm
 Step 2: add one field to all hole "point": 1
 Step 3: Load turbo-default.json to adjust point to become turbo
 Step 4: Upload all players to have same hole and turbo hole information
+
+Step 5: เปลี่ยนหน้าจอการแสดงผลเป็น Dynamic รองรับทั้งแนวตั้งและแนวนอน
+- แนวตั้ง ให้แสดง 
+  - Column Hole, Par, HC, Player Name 1, 2, 3, 4
+  - Row: 1, 4, 15, 4, 5, 4, 3 (score)
+- แนวนอน ให้แสดง
+  - Column Hole 1 (par 4, hc), Hole 2 (par 3, hc), ...
+  - Row by Player
+
+Seperate betwen front9 and back9 with summary score
+Indicate turbo hole (x2, x3 : More than x1)

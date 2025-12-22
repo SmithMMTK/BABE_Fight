@@ -2,8 +2,34 @@ import express from 'express';
 import db from '../db/database.js';
 import { generateUniquePINs } from '../utils/pinGenerator.js';
 import axios from 'axios';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const router = express.Router();
+
+// Load turbo configuration
+const turboConfigPath = join(__dirname, '../../../Resources/turbo-default.json');
+let turboConfig = {};
+try {
+  turboConfig = JSON.parse(fs.readFileSync(turboConfigPath, 'utf8'));
+} catch (err) {
+  console.warn('Failed to load turbo config, using empty config');
+}
+
+// Add points and turbo to course holes
+function enhanceCourseData(course) {
+  return {
+    ...course,
+    holes: course.holes.map(hole => ({
+      ...hole,
+      point: turboConfig[hole.hole] || 1
+    }))
+  };
+}
 
 // Create new game
 router.post('/create', async (req, res) => {
@@ -139,7 +165,8 @@ router.get('/courses/list', async (req, res) => {
     const response = await axios.get(
       'https://raw.githubusercontent.com/SmithMMTK/BABE_Fight/refs/heads/main/Resources/courses.json'
     );
-    res.json(response.data);
+    const enhancedCourses = response.data.map(enhanceCourseData);
+    res.json(enhancedCourses);
   } catch (error) {
     console.error('Get courses error:', error);
     res.status(500).json({ error: 'Failed to fetch courses' });
