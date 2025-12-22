@@ -1,0 +1,14 @@
+.create-game-wrapper {
+  max-width: 600px;
+  margin: 2rem auto;
+}
+
+.back-link {
+  margin-top: 2rem;
+}
+
+@media (max-width: 768px) {
+  .create-game-wrapper {
+    margin: 1rem auto;
+  }
+}

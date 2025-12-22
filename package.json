@@ -1,0 +1,25 @@
+{
+  "name": "babe-fight",
+  "version": "1.0.0",
+  "description": "Golf Scorecard Tracker - Multi-player real-time scoring",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd backend && node src/server.js",
+    "client": "cd frontend && npm run dev",
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SmithMMTK/BABE_Fight.git"
+  },
+  "keywords": ["golf", "scorecard", "multiplayer"],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/SmithMMTK/BABE_Fight/issues"
+  },
+  "homepage": "https://github.com/SmithMMTK/BABE_Fight#readme",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

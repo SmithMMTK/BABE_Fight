@@ -1,0 +1,270 @@
+.players-menu {
+  position: relative;
+  margin-bottom: 1rem;
+}
+
+.players-menu-toggle {
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  min-width: 200px;
+}
+
+.players-menu-toggle:hover {
+  background: #34495e;
+}
+
+.players-menu-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--color-card);
+  border-radius: 1rem;
+  box-shadow: var(--shadow-lg);
+  padding: 1.5rem;
+  margin-top: 0.5rem;
+  z-index: 100;
+  max-height: 80vh;
+  overflow-y: auto;
+  min-width: 400px;
+}
+
+/* PINs Section */
+.pins-section {
+  background: #f8f9fa;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.pin-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+}
+
+.pin-label {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-light);
+}
+
+.pin-code {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.2rem;
+}
+
+/* Add Player Section */
+.add-player-section {
+  background: #e8f5e9;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.add-player-section h4 {
+  margin-bottom: 0.75rem;
+  font-size: 1.125rem;
+}
+
+.add-player-form {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.player-input {
+  flex: 1;
+  min-width: 150px;
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 2px solid #ddd;
+  border-radius: 0.5rem;
+}
+
+.role-select {
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 2px solid #ddd;
+  border-radius: 0.5rem;
+  background: white;
+  cursor: pointer;
+}
+
+.btn-add {
+  padding: 0.75rem 1.5rem;
+  background: var(--color-success);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-add:hover {
+  background: #229954;
+}
+
+/* Players List */
+.players-list h4 {
+  margin-bottom: 1rem;
+  font-size: 1.125rem;
+  color: var(--color-text);
+}
+
+.player-item {
+  background: #f8f9fa;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.player-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.player-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.player-username {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.role-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: white;
+}
+
+.role-badge.host {
+  background: var(--color-warning);
+}
+
+.role-badge.player {
+  background: var(--color-secondary);
+}
+
+.you-badge {
+  font-size: 0.875rem;
+  color: var(--color-success);
+  font-weight: 600;
+}
+
+.player-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-edit,
+.btn-toggle,
+.btn-remove {
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  background: white;
+  border: 2px solid #ddd;
+}
+
+.btn-edit:hover {
+  background: #e3f2fd;
+  border-color: var(--color-secondary);
+}
+
+.btn-toggle:hover {
+  background: #fff3e0;
+  border-color: var(--color-warning);
+}
+
+.btn-remove:hover {
+  background: #ffebee;
+  border-color: var(--color-danger);
+}
+
+/* Edit Username */
+.edit-username {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.edit-input {
+  flex: 1;
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 2px solid var(--color-secondary);
+  border-radius: 0.5rem;
+}
+
+.btn-save,
+.btn-cancel {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-save {
+  background: var(--color-success);
+  color: white;
+}
+
+.btn-save:hover {
+  background: #229954;
+}
+
+.btn-cancel {
+  background: #ddd;
+  color: var(--color-text);
+}
+
+.btn-cancel:hover {
+  background: #bbb;
+}
+
+@media (max-width: 768px) {
+  .players-menu-dropdown {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    min-width: 90vw;
+    max-width: 90vw;
+    max-height: 80vh;
+  }
+
+  .add-player-form {
+    flex-direction: column;
+  }
+
+  .player-input,
+  .role-select {
+    width: 100%;
+  }
+}
