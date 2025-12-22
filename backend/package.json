@@ -7,12 +7,13 @@
     "dev": "nodemon src/server.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "socket.io": "^4.6.1",
-    "mssql": "^11.0.1",
-    "dotenv": "^16.4.7",
+    "axios": "^1.6.7",
+    "better-sqlite3": "^12.5.0",
     "cors": "^2.8.5",
-    "axios": "^1.6.7"
+    "dotenv": "^16.4.7",
+    "express": "^4.18.2",
+    "mssql": "^11.0.1",
+    "socket.io": "^4.6.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.3"
