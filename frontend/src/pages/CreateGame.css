@@ -1,0 +1,70 @@
+.back-button {
+  background: transparent;
+  color: #ffffff;
+  border: none;
+  font-size: 1rem;
+  padding: 8px;
+  margin-bottom: 16px;
+  cursor: pointer;
+}
+
+.back-button:hover {
+  opacity: 0.8;
+}
+
+.create-game-card {
+  text-align: center;
+}
+
+.description {
+  opacity: 0.9;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.course-select {
+  width: 100%;
+  padding: 14px;
+  font-size: 16px;
+  border: 2px solid #ffffff;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.course-select:focus {
+  outline: none;
+  border-color: #ffd700;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.course-select option {
+  background: #0d4d10;
+  color: #ffffff;
+}
+
+.info-box {
+  margin-top: 24px;
+  padding: 16px;
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 8px;
+  text-align: left;
+}
+
+.info-box p {
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.info-box ul {
+  margin: 0;
+  padding-left: 20px;
+  opacity: 0.9;
+}
+
+.info-box li {
+  margin: 4px 0;
+}
