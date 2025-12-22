@@ -51,6 +51,16 @@ export function setupGameSocket(io) {
       });
     });
 
+    // Turbo multiplier changed
+    socket.on('turbo-update', ({ gameId, holeNumber, multiplier }) => {
+      // Broadcast to everyone in the game including sender
+      io.to(`game-${gameId}`).emit('turbo-updated', {
+        holeNumber,
+        multiplier
+      });
+      console.log(`Turbo updated for game ${gameId}, hole ${holeNumber}: x${multiplier}`);
+    });
+
     socket.on('disconnect', () => {
       console.log('Client disconnected:', socket.id);
     });

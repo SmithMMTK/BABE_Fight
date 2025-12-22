@@ -11,7 +11,18 @@ export function SocketProvider({ children }) {
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:8080';
+    // Use dynamic host based on where the frontend is accessed from
+    const getSocketUrl = () => {
+      if (import.meta.env.VITE_SOCKET_URL) {
+        return import.meta.env.VITE_SOCKET_URL;
+      }
+      // If accessed via network IP, use that IP for backend too
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const hostname = window.location.hostname;
+      return `${window.location.protocol}//${hostname}:8080`;
+    };
+
+    const SOCKET_URL = getSocketUrl();
     const newSocket = io(SOCKET_URL);
 
     newSocket.on('connect', () => {

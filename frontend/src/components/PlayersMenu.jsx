@@ -20,7 +20,7 @@ function PlayersMenu({
   const [editUsername, setEditUsername] = useState('');
 
   const currentPlayer = players.find(p => p.id === currentPlayerId);
-  const isCurrentPlayerHost = currentPlayer?.role === 'host';
+  const isCurrentPlayerHost = currentPlayer ? (currentPlayer.role === 'host' || currentPlayer.is_host === 1 || currentPlayer.is_host === true) : isHost;
 
   const handleAddPlayer = () => {
     if (!newPlayerName.trim()) return;
@@ -64,16 +64,27 @@ function PlayersMenu({
           </button>
         </div>
 
-        {/* ข้อ 2: แสดง PINs */}
+        {/* ข้อ 2: แสดง PINs - แสดงตาม Role */}
         <div className="pins-section">
-            <div className="pin-item">
-              <span className="pin-label">HOST PIN:</span>
-              <span className="pin-code">{hostPin}</span>
-            </div>
-            <div className="pin-item">
-              <span className="pin-label">GUEST PIN:</span>
-              <span className="pin-code">{guestPin}</span>
-            </div>
+            {isCurrentPlayerHost ? (
+              // Host เห็นทั้ง HOST PIN และ GUEST PIN
+              <>
+                <div className="pin-item">
+                  <span className="pin-label">HOST PIN:</span>
+                  <span className="pin-code">{hostPin}</span>
+                </div>
+                <div className="pin-item">
+                  <span className="pin-label">GUEST PIN:</span>
+                  <span className="pin-code">{guestPin}</span>
+                </div>
+              </>
+            ) : (
+              // Guest เห็นเฉพาะ GUEST PIN
+              <div className="pin-item">
+                <span className="pin-label">GUEST PIN:</span>
+                <span className="pin-code">{guestPin}</span>
+              </div>
+            )}
           </div>
 
           {/* ข้อ 3: Host เพิ่ม player */}

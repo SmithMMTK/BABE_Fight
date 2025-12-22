@@ -1,6 +1,17 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+// Use dynamic host based on where the frontend is accessed from
+const getApiUrl = () => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  // If accessed via network IP, use that IP for backend too
+  const protocol = window.location.protocol;
+  const hostname = window.location.hostname;
+  return `${protocol}//${hostname}:8080/api`;
+};
+
+const API_URL = getApiUrl();
 
 export const api = {
   // Games
@@ -18,5 +29,9 @@ export const api = {
   // Scores
   updateScore: (data) => axios.post(`${API_URL}/scores`, data),
   getPlayerScores: (playerId) => axios.get(`${API_URL}/scores/player/${playerId}`),
-  getGameScores: (gameId) => axios.get(`${API_URL}/scores/game/${gameId}`)
+  getGameScores: (gameId) => axios.get(`${API_URL}/scores/game/${gameId}`),
+
+  // Turbo
+  getTurboValues: (gameId) => axios.get(`${API_URL}/games/${gameId}/turbo`),
+  updateTurboValue: (gameId, data) => axios.post(`${API_URL}/games/${gameId}/turbo`, data)
 };

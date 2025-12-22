@@ -10,8 +10,9 @@ const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-    methods: ['GET', 'POST']
+    origin: '*',
+    methods: ['GET', 'POST'],
+    credentials: true
   }
 });
 
@@ -32,6 +33,7 @@ app.get('/health', (req, res) => {
 setupGameSocket(io);
 
 const PORT = process.env.PORT || 8080;
-httpServer.listen(PORT, () => {
+httpServer.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📱 Access from network: http://<your-ip>:${PORT}`);
 });

@@ -258,4 +258,50 @@ router.patch('/:gameId/players/:playerId/username', (req, res) => {
   }
 });
 
+// Get turbo multipliers for a game
+router.get('/:gameId/turbo', (req, res) => {
+  try {
+    const { gameId } = req.params;
+    
+    const turbos = db
+      .prepare('SELECT hole_number, multiplier FROM game_turbo WHERE game_id = ?')
+      .all(gameId);
+    
+    const turboMap = {};
+    turbos.forEach(t => {
+      turboMap[t.hole_number] = t.multiplier;
+    });
+    
+    res.json(turboMap);
+  } catch (error) {
+    console.error('Get turbo error:', error);
+    res.status(500).json({ error: 'Failed to get turbo values' });
+  }
+});
+
+// Update turbo multiplier for a hole
+router.post('/:gameId/turbo', (req, res) => {
+  try {
+    const { gameId } = req.params;
+    const { holeNumber, multiplier } = req.body;
+
+    if (!holeNumber || !multiplier) {
+      return res.status(400).json({ error: 'Missing hole number or multiplier' });
+    }
+
+    const stmt = db.prepare(`
+      INSERT INTO game_turbo (game_id, hole_number, multiplier)
+      VALUES (?, ?, ?)
+      ON CONFLICT(game_id, hole_number) 
+      DO UPDATE SET multiplier = ?, updated_at = CURRENT_TIMESTAMP
+    `);
+    
+    stmt.run(gameId, holeNumber, multiplier, multiplier);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Update turbo error:', error);
+    res.status(500).json({ error: 'Failed to update turbo value' });
+  }
+});
+
 export default router;

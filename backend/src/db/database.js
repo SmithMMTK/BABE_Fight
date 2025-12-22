@@ -46,6 +46,16 @@ db.exec(`
     UNIQUE(player_id, hole_number)
   );
 
+  CREATE TABLE IF NOT EXISTS game_turbo (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    game_id INTEGER NOT NULL,
+    hole_number INTEGER NOT NULL,
+    multiplier INTEGER DEFAULT 1,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE,
+    UNIQUE(game_id, hole_number)
+  );
+
   CREATE INDEX IF NOT EXISTS idx_games_host_pin ON games(host_pin);
   CREATE INDEX IF NOT EXISTS idx_games_guest_pin ON games(guest_pin);
   CREATE INDEX IF NOT EXISTS idx_players_game ON players(game_id);

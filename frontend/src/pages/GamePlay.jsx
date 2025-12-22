@@ -19,12 +19,32 @@ function GamePlay() {
   const [error, setError] = useState('');
   const [currentPlayerId, setCurrentPlayerId] = useState(null);
   const [showPlayersMenu, setShowPlayersMenu] = useState(false);
+  const [showHamburgerMenu, setShowHamburgerMenu] = useState(false);
   const [viewAsPlayerId, setViewAsPlayerId] = useState(null); // For HOST to view as another player
+  const [turboValues, setTurboValues] = useState({}); // Track turbo multipliers for each hole
+  const [showTurboDropdown, setShowTurboDropdown] = useState(null); // holeNumber
+  const [lastTapTime, setLastTapTime] = useState({});
+  const [lastTapHole, setLastTapHole] = useState(null);
 
-  const { isHost, hostPin, guestPin, username } = location.state || {};
+  // Get session from localStorage or location.state
+  const getSession = () => {
+    const savedSession = localStorage.getItem(`game_session_${gameId}`);
+    if (savedSession) {
+      return JSON.parse(savedSession);
+    }
+    return location.state;
+  };
+
+  const sessionData = getSession();
+  const { isHost, hostPin, guestPin, username } = sessionData || {};
 
   useEffect(() => {
-    if (!location.state) {
+    // Save session to localStorage when component mounts
+    if (location.state && gameId) {
+      localStorage.setItem(`game_session_${gameId}`, JSON.stringify(location.state));
+    }
+
+    if (!sessionData) {
       navigate('/');
       return;
     }
@@ -38,11 +58,17 @@ function GamePlay() {
       socket.on('score-updated', handleScoreUpdate);
       socket.on('role-changed', handleRoleChanged);
       socket.on('username-changed', handleUsernameChanged);
+      socket.on('turbo-updated', handleTurboUpdate);
+      socket.on('player-added', handlePlayerAdded);
+      socket.on('player-removed', handlePlayerRemoved);
 
       return () => {
         socket.off('score-updated', handleScoreUpdate);
         socket.off('role-changed', handleRoleChanged);
         socket.off('username-changed', handleUsernameChanged);
+        socket.off('turbo-updated', handleTurboUpdate);
+        socket.off('player-added', handlePlayerAdded);
+        socket.off('player-removed', handlePlayerRemoved);
       };
     }
   }, [socket, gameId]);
@@ -81,6 +107,40 @@ function GamePlay() {
       const gameResponse = await api.getGame(gameId);
       const courseData = response.data.find(c => c.id === gameResponse.data.game.course_id);
       setCourse(courseData);
+      
+      // Load turbo values from database
+      try {
+        const turboResponse = await api.getTurboValues(gameId);
+        const turbos = turboResponse.data;
+        
+        // Initialize with course defaults if no database values
+        if (Object.keys(turbos).length === 0 && courseData) {
+          const defaultTurbos = {};
+          courseData.holes.forEach(hole => {
+            defaultTurbos[hole.hole] = hole.point || 1;
+          });
+          setTurboValues(defaultTurbos);
+        } else {
+          // Use database values, fill missing with 1
+          const finalTurbos = {};
+          if (courseData) {
+            courseData.holes.forEach(hole => {
+              finalTurbos[hole.hole] = turbos[hole.hole] || 1;
+            });
+          }
+          setTurboValues(finalTurbos);
+        }
+      } catch (err) {
+        console.error('Failed to load turbo values:', err);
+        // Fallback to course defaults
+        if (courseData) {
+          const turbos = {};
+          courseData.holes.forEach(hole => {
+            turbos[hole.hole] = hole.point || 1;
+          });
+          setTurboValues(turbos);
+        }
+      }
     } catch (err) {
       console.error('Failed to load course:', err);
     }
@@ -108,13 +168,76 @@ function GamePlay() {
     ));
   };
 
+  // Turbo multiplier functions
+  const handleTurboDoubleTap = (holeNumber) => {
+    if (!isCurrentUserHost) return;
+    
+    const now = Date.now();
+    const lastTap = lastTapTime[holeNumber] || 0;
+    const timeSinceLastTap = now - lastTap;
+    
+    if (timeSinceLastTap < 300 && timeSinceLastTap > 0 && lastTapHole === holeNumber) {
+      // Double tap detected
+      setShowTurboDropdown(holeNumber);
+      setLastTapTime({});
+      setLastTapHole(null);
+    } else {
+      // First tap
+      setLastTapTime({ ...lastTapTime, [holeNumber]: now });
+      setLastTapHole(holeNumber);
+    }
+  };
+
+  const updateTurboValue = async (holeNumber, multiplier) => {
+    setTurboValues(prev => ({
+      ...prev,
+      [holeNumber]: multiplier
+    }));
+    setShowTurboDropdown(null);
+    
+    // Save to database
+    try {
+      await api.updateTurboValue(gameId, { holeNumber, multiplier });
+    } catch (err) {
+      console.error('Failed to save turbo value:', err);
+    }
+    
+    // Broadcast to other players
+    if (socket) {
+      socket.emit('turbo-update', { gameId, holeNumber, multiplier });
+    }
+  };
+
+  const handleTurboUpdate = ({ holeNumber, multiplier }) => {
+    setTurboValues(prev => ({
+      ...prev,
+      [holeNumber]: multiplier
+    }));
+  };
+
+  const handlePlayerAdded = (player) => {
+    setPlayers(prev => {
+      // Check if player already exists
+      if (prev.some(p => p.id === player.id)) return prev;
+      return [...prev, player];
+    });
+  };
+
+  const handlePlayerRemoved = (playerId) => {
+    setPlayers(prev => prev.filter(p => p.id !== playerId));
+  };
+
   // Player management functions
   const handleAddPlayer = async (username, role) => {
     try {
       const response = await api.addPlayer(gameId, { username, role });
       const newPlayer = response.data;
       setPlayers(prev => [...prev, newPlayer]);
-      // ไม่ต้อง emit เพราะเราเพิ่มเองแล้ว - คนอื่นจะเห็นเมื่อ refresh
+      
+      // Broadcast to other players
+      if (socket) {
+        socket.emit('player-added', { gameId, player: newPlayer });
+      }
     } catch (err) {
       console.error('Failed to add player:', err);
       if (err.response?.status === 400) {
@@ -129,7 +252,11 @@ function GamePlay() {
     try {
       await api.removePlayer(gameId, playerId);
       setPlayers(prev => prev.filter(p => p.id !== playerId));
-      // ไม่ต้อง emit - คนอื่นจะเห็นเมื่อ refresh
+      
+      // Broadcast to other players
+      if (socket) {
+        socket.emit('player-removed', { gameId, playerId });
+      }
     } catch (err) {
       console.error('Failed to remove player:', err);
       setError('ไม่สามารถลบผู้เล่นได้');
@@ -166,6 +293,13 @@ function GamePlay() {
       console.error('Failed to update username:', err);
       setError('ไม่สามารถเปลี่ยนชื่อได้');
     }
+  };
+
+  const handleLeaveGame = () => {
+    // Clear session from localStorage
+    localStorage.removeItem(`game_session_${gameId}`);
+    // Navigate to home
+    navigate('/');
   };
 
   const updateScore = async (playerId, holeNumber, score) => {
@@ -285,7 +419,7 @@ function GamePlay() {
     <div className="container gameplay-container">
       <div className="game-header">
         <div className="header-row">
-          <div style={{flex: 1}}>
+          <div style={{flex: 1, minWidth: '200px'}}>
             <h1>{game?.course_name}</h1>
             <div style={{
               fontSize: '0.9rem',
@@ -306,7 +440,8 @@ function GamePlay() {
                   borderRadius: '0.25rem',
                   border: '1px solid #ccc',
                   backgroundColor: 'white',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  maxWidth: '200px'
                 }}
               >
                 <option value="">View as: {displayName} (Me)</option>
@@ -318,11 +453,53 @@ function GamePlay() {
               </select>
             )}
           </div>
-          <button className="btn-players-menu" onClick={() => setShowPlayersMenu(!showPlayersMenu)}>
-            <span className="players-icon">👥</span>
-            <span className="players-count">({players.length})</span>
+          <button 
+            className="btn-hamburger-menu" 
+            onClick={() => setShowHamburgerMenu(!showHamburgerMenu)}
+          >
+            <div className="hamburger-icon">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
           </button>
         </div>
+
+        {/* Hamburger Menu */}
+        {showHamburgerMenu && (
+          <div className="hamburger-menu-overlay" onClick={() => setShowHamburgerMenu(false)}>
+            <div className="hamburger-menu-panel" onClick={(e) => e.stopPropagation()}>
+              <div className="hamburger-menu-header">
+                <h3>เมนู</h3>
+                <button 
+                  className="btn-close-hamburger"
+                  onClick={() => setShowHamburgerMenu(false)}
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="hamburger-menu-items">
+                <button 
+                  className="hamburger-menu-item"
+                  onClick={() => {
+                    setShowHamburgerMenu(false);
+                    setShowPlayersMenu(true);
+                  }}
+                >
+                  <span className="menu-icon">👥</span>
+                  <span>จัดการผู้เล่น ({players.length})</span>
+                </button>
+                <button 
+                  className="hamburger-menu-item danger"
+                  onClick={handleLeaveGame}
+                >
+                  <span className="menu-icon">🚪</span>
+                  <span>ออกจากเกม</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {showPlayersMenu && (
           <PlayersMenu
@@ -348,8 +525,7 @@ function GamePlay() {
           <table className="scorecard vertical">
             <thead>
               <tr>
-                <th className="hole-col-vertical">Hole</th>
-                <th className="par-col">Par</th>
+                <th className="hole-par-col-vertical">Hole</th>
                 {sortedPlayers.map(player => (
                   <th key={player.id} className="player-col-vertical">
                     {player.username.trim()}
@@ -359,17 +535,54 @@ function GamePlay() {
             </thead>
             <tbody>
               {course.holes.slice(0, 9).map((hole, idx) => (
-                <tr key={idx} className={hole.point > 1 ? 'turbo-row' : ''}>
-                  <td className="hole-col-vertical">
-                    <div className="hole-number-vertical">
-                      {hole.hole}
-                      {hole.point > 1 && <span className="turbo-badge">x{hole.point}</span>}
-                    </div>
-                  </td>
-                  <td className="par-col">
-                    <div className="par-hc-group">
-                      <div className="par-value">Par {hole.par}</div>
-                      <div className="hc-value">HC {hole.hc}</div>
+                <tr key={idx} className={turboValues[hole.hole] > 1 ? 'turbo-row' : ''}>
+                  <td 
+                    className="hole-par-col-vertical"
+                    onClick={() => handleTurboDoubleTap(hole.hole)}
+                    onDoubleClick={() => isCurrentUserHost && setShowTurboDropdown(hole.hole)}
+                    style={{ 
+                      position: 'relative', 
+                      cursor: isCurrentUserHost ? 'pointer' : 'default', 
+                      userSelect: 'none',
+                      WebkitTouchCallout: 'none',
+                      WebkitUserSelect: 'none'
+                    }}
+                  >
+                    <div className="hole-par-combined">
+                      <div className="hole-number-vertical">
+                        {hole.hole}
+                        {turboValues[hole.hole] > 1 && <span className="turbo-badge">x{turboValues[hole.hole]}</span>}
+                      </div>
+                      {showTurboDropdown === hole.hole && (
+                        <select
+                          className="turbo-dropdown"
+                          value={turboValues[hole.hole] || 1}
+                          onChange={(e) => updateTurboValue(hole.hole, parseInt(e.target.value))}
+                          onBlur={() => setShowTurboDropdown(null)}
+                          autoFocus
+                          style={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            zIndex: 1000,
+                            fontSize: '0.9rem',
+                            padding: '0.25rem',
+                            borderRadius: '0.25rem',
+                            border: '1px solid #ddd',
+                            background: 'white',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                          }}
+                        >
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
+                            <option key={num} value={num}>x{num}</option>
+                          ))}
+                        </select>
+                      )}
+                      <div className="par-hc-group">
+                        <div className="par-value">Par {hole.par}</div>
+                        <div className="hc-value">HC {hole.hc}</div>
+                      </div>
                     </div>
                   </td>
                   {sortedPlayers.map(player => (
@@ -401,7 +614,7 @@ function GamePlay() {
                           ))}
                         </select>
                       ) : (
-                        <div style={{fontSize: '1rem', color: '#999'}}>-</div>
+                        <div style={{fontSize: '1rem', color: '#999', textAlign: 'center', width: '100%'}}>-</div>
                       )}
                     </td>
                   ))}
@@ -409,8 +622,7 @@ function GamePlay() {
               ))}
               {/* Front 9 Total */}
               <tr className="total-row">
-                <td className="hole-col-vertical"><strong>1-9</strong></td>
-                <td className="par-col"></td>
+                <td className="hole-par-col-vertical"><strong>1-9</strong></td>
                 {sortedPlayers.map(player => (
                   <td key={player.id} className="total-cell">
                     <strong>{calculateFront9(player.id)}</strong>
@@ -424,8 +636,7 @@ function GamePlay() {
           <table className="scorecard vertical">
             <thead>
               <tr>
-                <th className="hole-col-vertical">Hole</th>
-                <th className="par-col">Par</th>
+                <th className="hole-par-col-vertical">Hole</th>
                 {sortedPlayers.map(player => (
                   <th key={player.id} className="player-col-vertical">
                     {player.username.trim()}
@@ -435,17 +646,54 @@ function GamePlay() {
             </thead>
             <tbody>
               {course.holes.slice(9, 18).map((hole, idx) => (
-                <tr key={idx} className={hole.point > 1 ? 'turbo-row' : ''}>
-                  <td className="hole-col-vertical">
-                    <div className="hole-number-vertical">
-                      {hole.hole}
-                      {hole.point > 1 && <span className="turbo-badge">x{hole.point}</span>}
-                    </div>
-                  </td>
-                  <td className="par-col">
-                    <div className="par-hc-group">
-                      <div className="par-value">Par {hole.par}</div>
-                      <div className="hc-value">HC {hole.hc}</div>
+                <tr key={idx} className={turboValues[hole.hole] > 1 ? 'turbo-row' : ''}>
+                  <td 
+                    className="hole-par-col-vertical"
+                    onClick={() => handleTurboDoubleTap(hole.hole)}
+                    onDoubleClick={() => isCurrentUserHost && setShowTurboDropdown(hole.hole)}
+                    style={{ 
+                      position: 'relative', 
+                      cursor: isCurrentUserHost ? 'pointer' : 'default', 
+                      userSelect: 'none',
+                      WebkitTouchCallout: 'none',
+                      WebkitUserSelect: 'none'
+                    }}
+                  >
+                    <div className="hole-par-combined">
+                      <div className="hole-number-vertical">
+                        {hole.hole}
+                        {turboValues[hole.hole] > 1 && <span className="turbo-badge">x{turboValues[hole.hole]}</span>}
+                      </div>
+                      {showTurboDropdown === hole.hole && (
+                        <select
+                          className="turbo-dropdown"
+                          value={turboValues[hole.hole] || 1}
+                          onChange={(e) => updateTurboValue(hole.hole, parseInt(e.target.value))}
+                          onBlur={() => setShowTurboDropdown(null)}
+                          autoFocus
+                          style={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            zIndex: 1000,
+                            fontSize: '0.9rem',
+                            padding: '0.25rem',
+                            borderRadius: '0.25rem',
+                            border: '1px solid #ddd',
+                            background: 'white',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                          }}
+                        >
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
+                            <option key={num} value={num}>x{num}</option>
+                          ))}
+                        </select>
+                      )}
+                      <div className="par-hc-group">
+                        <div className="par-value">Par {hole.par}</div>
+                        <div className="hc-value">HC {hole.hc}</div>
+                      </div>
                     </div>
                   </td>
                   {sortedPlayers.map(player => (
@@ -477,7 +725,7 @@ function GamePlay() {
                           ))}
                         </select>
                       ) : (
-                        <div style={{fontSize: '1rem', color: '#999'}}>-</div>
+                        <div style={{fontSize: '1rem', color: '#999', textAlign: 'center', width: '100%'}}>-</div>
                       )}
                     </td>
                   ))}
@@ -485,8 +733,7 @@ function GamePlay() {
               ))}
               {/* Back 9 Total */}
               <tr className="total-row">
-                <td className="hole-col-vertical"><strong>10-18</strong></td>
-                <td className="par-col"></td>
+                <td className="hole-par-col-vertical"><strong>10-18</strong></td>
                 {sortedPlayers.map(player => (
                   <td key={player.id} className="total-cell">
                     <strong>{calculateBack9(player.id)}</strong>
@@ -495,8 +742,7 @@ function GamePlay() {
               </tr>
               {/* Grand Total */}
               <tr className="total-row final-row">
-                <td className="hole-col-vertical"><strong>Total</strong></td>
-                <td className="par-col"></td>
+                <td className="hole-par-col-vertical"><strong>Total</strong></td>
                 {sortedPlayers.map(player => (
                   <td key={player.id} className="total-cell final">
                     <strong>{calculateTotal(player.id)}</strong>
