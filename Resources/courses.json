@@ -1,0 +1,98 @@
+[
+  {
+    "id":"bangkok_golf",
+    "name": "Bangkok Golf Club",
+    "holes": [
+      { "hole": 1,  "par": 4, "hc": 14 },
+      { "hole": 2,  "par": 3, "hc": 10 },
+      { "hole": 3,  "par": 5, "hc": 16 },
+      { "hole": 4,  "par": 4, "hc": 2 },
+      { "hole": 5,  "par": 3, "hc": 8 },
+      { "hole": 6,  "par": 4, "hc": 12 },
+      { "hole": 7,  "par": 4, "hc": 18 },
+      { "hole": 8,  "par": 4, "hc": 4 },
+      { "hole": 9,  "par": 5, "hc": 6 },
+      { "hole": 10, "par": 4, "hc": 13 },
+      { "hole": 11, "par": 3, "hc": 7 },
+      { "hole": 12, "par": 4, "hc": 9 },
+      { "hole": 13,  "par": 5, "hc": 1 },
+      { "hole": 14,  "par": 3, "hc": 11 },
+      { "hole": 15,  "par": 4, "hc": 15 },
+      { "hole": 16,  "par": 4, "hc": 3},
+      { "hole": 17,  "par": 5, "hc": 17 },
+      { "hole": 18,  "par": 4, "hc": 5 }
+    ]
+  },
+  {
+    "id": "st_andrew_2000",
+    "name": "St. Andrew 2000 Rayong",
+    "holes": [
+      { "hole": 1,  "par": 4, "hc": 9 },
+      { "hole": 2,  "par": 4, "hc": 7 },
+      { "hole": 3,  "par": 3, "hc": 1 },
+      { "hole": 4,  "par": 6, "hc": 11 },
+      { "hole": 5,  "par": 3, "hc": 13 },
+      { "hole": 6,  "par": 4, "hc": 15 },
+      { "hole": 7,  "par": 5, "hc": 17 },
+      { "hole": 8,  "par": 4, "hc": 3 },
+      { "hole": 9,  "par": 4, "hc": 5 },
+      { "hole": 10, "par": 3, "hc": 18 },
+      { "hole": 11, "par": 4, "hc": 4 },
+      { "hole": 12, "par": 4, "hc": 12 },
+      { "hole": 13, "par": 6, "hc": 10 },
+      { "hole": 14, "par": 4, "hc": 6 },
+      { "hole": 15, "par": 4, "hc": 8 },
+      { "hole": 16, "par": 4, "hc": 14 },
+      { "hole": 17, "par": 3, "hc": 2 },
+      { "hole": 18, "par": 5, "hc": 16 }
+    ]
+  },
+  {
+    "id": "pomelo",
+    "name": "Pomelo",
+    "holes": [
+      { "hole": 1,  "par": 4, "hc": 11 },
+      { "hole": 2,  "par": 3, "hc": 15 },
+      { "hole": 3,  "par": 4, "hc": 7 },
+      { "hole": 4,  "par": 5, "hc": 3 },
+      { "hole": 5,  "par": 3, "hc": 17 },
+      { "hole": 6,  "par": 4, "hc": 5 },
+      { "hole": 7,  "par": 5, "hc": 1 },
+      { "hole": 8,  "par": 4, "hc": 9 },
+      { "hole": 9,  "par": 4, "hc": 13 },
+      { "hole": 10, "par": 4, "hc": 6 },
+      { "hole": 11, "par": 5, "hc": 2 },
+      { "hole": 12, "par": 4, "hc": 14 },
+      { "hole": 13, "par": 3, "hc": 16 },
+      { "hole": 14, "par": 5, "hc": 4 },
+      { "hole": 15, "par": 4, "hc": 8 },
+      { "hole": 16, "par": 3, "hc": 18 },
+      { "hole": 17, "par": 4, "hc": 12 },
+      { "hole": 18, "par": 4, "hc": 10 }
+    ]
+  },
+  {
+    "id": "rayong_green_valley",
+    "name": "Rayong Green Valley",
+    "holes": [
+      { "hole": 1,  "par": 4, "hc": 1 },
+      { "hole": 2,  "par": 4, "hc": 13 },
+      { "hole": 3,  "par": 4, "hc": 17 },
+      { "hole": 4,  "par": 5, "hc": 7 },
+      { "hole": 5,  "par": 3, "hc": 11 },
+      { "hole": 6,  "par": 4, "hc": 9 },
+      { "hole": 7,  "par": 5, "hc": 5 },
+      { "hole": 8,  "par": 3, "hc": 13 },
+      { "hole": 9,  "par": 4, "hc": 3 },
+      { "hole": 10, "par": 5, "hc": 6 },
+      { "hole": 11, "par": 3, "hc": 16 },
+      { "hole": 12, "par": 4, "hc": 14 },
+      { "hole": 13, "par": 4, "hc": 2 },
+      { "hole": 14, "par": 5, "hc": 8 },
+      { "hole": 15, "par": 4, "hc": 4 },
+      { "hole": 16, "par": 3, "hc": 18 },
+      { "hole": 17, "par": 4, "hc": 10 },
+      { "hole": 18, "par": 4, "hc": 12 }
+    ]
+  }
+]
