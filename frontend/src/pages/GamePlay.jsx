@@ -603,11 +603,40 @@ function GamePlay() {
             <thead>
               <tr>
                 <th className="hole-par-col-vertical">Hole</th>
-                {sortedPlayers.map(player => (
-                  <th key={player.id} className="player-col-vertical">
-                    {player.username.trim()}
-                  </th>
-                ))}
+                {sortedPlayers.map((player, index) => {
+                  // Calculate H2H handicap display for header
+                  let handicapInfo = '';
+                  if (index === 0) {
+                    // Focus player - show their handicap
+                    handicapInfo = player.handicap ? ` (${player.handicap})` : '';
+                  } else {
+                    // Other players - show stroke relationship
+                    const strokeDiff = (player.handicap || 0) - (sortedPlayers[0].handicap || 0);
+                    if (strokeDiff > 0) {
+                      // Focus player gives strokes (red -)
+                      handicapInfo = ` (-${strokeDiff})`;
+                    } else if (strokeDiff < 0) {
+                      // Focus player receives strokes (green +)
+                      handicapInfo = ` (+${Math.abs(strokeDiff)})`;
+                    }
+                  }
+                  
+                  return (
+                    <th key={player.id} className="player-col-vertical">
+                      <div>{player.username.trim()}</div>
+                      {handicapInfo && (
+                        <div style={{
+                          fontSize: '0.75rem',
+                          fontWeight: 'normal',
+                          color: index === 0 ? '#666' : (handicapInfo.startsWith(' (+') ? 'green' : 'red'),
+                          marginTop: '2px'
+                        }}>
+                          {handicapInfo}
+                        </div>
+                      )}
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
@@ -735,11 +764,40 @@ function GamePlay() {
             <thead>
               <tr>
                 <th className="hole-par-col-vertical">Hole</th>
-                {sortedPlayers.map(player => (
-                  <th key={player.id} className="player-col-vertical">
-                    {player.username.trim()}
-                  </th>
-                ))}
+                {sortedPlayers.map((player, index) => {
+                  // Calculate H2H handicap display for header
+                  let handicapInfo = '';
+                  if (index === 0) {
+                    // Focus player - show their handicap
+                    handicapInfo = player.handicap ? ` (${player.handicap})` : '';
+                  } else {
+                    // Other players - show stroke relationship
+                    const strokeDiff = (player.handicap || 0) - (sortedPlayers[0].handicap || 0);
+                    if (strokeDiff > 0) {
+                      // Focus player gives strokes (red -)
+                      handicapInfo = ` (-${strokeDiff})`;
+                    } else if (strokeDiff < 0) {
+                      // Focus player receives strokes (green +)
+                      handicapInfo = ` (+${Math.abs(strokeDiff)})`;
+                    }
+                  }
+                  
+                  return (
+                    <th key={player.id} className="player-col-vertical">
+                      <div>{player.username.trim()}</div>
+                      {handicapInfo && (
+                        <div style={{
+                          fontSize: '0.75rem',
+                          fontWeight: 'normal',
+                          color: index === 0 ? '#666' : (handicapInfo.startsWith(' (+') ? 'green' : 'red'),
+                          marginTop: '2px'
+                        }}>
+                          {handicapInfo}
+                        </div>
+                      )}
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
