@@ -3,7 +3,7 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 import { api } from '../services/api';
 import PlayersMenu from '../components/PlayersMenu';
-import { calculateStrokeAllocation, getStrokeDisplay } from '../utils/strokeAllocation';
+import { calculateStrokeAllocation, getStrokeDisplay, allocateStrokesFor9Holes } from '../utils/strokeAllocation';
 import './GamePlay.css';
 
 function GamePlay() {
@@ -28,6 +28,7 @@ function GamePlay() {
   const [showTurboDropdown, setShowTurboDropdown] = useState(null); // holeNumber
   const [lastTapTime, setLastTapTime] = useState({});
   const [lastTapHole, setLastTapHole] = useState(null);
+  const [h2hStrokeAllocation, setH2hStrokeAllocation] = useState(null); // H2H handicap matrix from server
 
   // Get session from localStorage or location.state
   const getSession = () => {
@@ -42,21 +43,22 @@ function GamePlay() {
   const { isHost, hostPin, guestPin, username } = sessionData || {};
 
   // Calculate stroke allocation for H2H handicap
-  // Must be called before any conditional returns to maintain hook order
+  // Use H2H matrix from server if available, otherwise calculate from player handicaps
   const strokeAllocation = useMemo(() => {
     if (!course || !players || players.length === 0) return {};
     
-    // Debug: Log player handicaps
-    console.log('Players for stroke allocation:', players.map(p => ({ 
-      id: p.id, 
-      username: p.username, 
-      handicap: p.handicap 
-    })));
+    // If we have H2H data from server, use it directly
+    if (h2hStrokeAllocation) {
+      console.log('Using H2H stroke allocation from server:', h2hStrokeAllocation);
+      return h2hStrokeAllocation;
+    }
     
+    // Fallback: Calculate from player handicaps
+    console.log('Calculating stroke allocation from player handicaps');
     const allocation = calculateStrokeAllocation(players, course.holes, turboValues);
-    console.log('Stroke allocation calculated:', allocation);
+    console.log('Calculated stroke allocation:', allocation);
     return allocation;
-  }, [players, course, turboValues]);
+  }, [players, course, turboValues, h2hStrokeAllocation]);
 
   useEffect(() => {
     // Fetch version info
@@ -125,6 +127,43 @@ function GamePlay() {
         if (s.hole_number) scoresMap[s.player_id][s.hole_number] = s.score;
       });
       setScores(scoresMap);
+
+      // Load H2H handicap matrix
+      try {
+        const h2hResponse = await api.get(`/games/${gameId}/handicap-matrix`);
+        const { handicapMatrix } = h2hResponse.data;
+        const gameResponse = await api.getGame(gameId);
+        const courseResponse = await api.getCourses();
+        const courseData = courseResponse.data.find(c => c.id === gameResponse.data.game.course_id);
+        
+        if (!handicapMatrix || Object.keys(handicapMatrix).length === 0 || !courseData) {
+          console.log('No H2H matrix or course data found');
+          return;
+        }
+        
+        // Convert H2H total strokes to per-hole allocation
+        const strokeAlloc = {};
+        const front9Holes = courseData.holes.filter(h => h.hole >= 1 && h.hole <= 9);
+        const back9Holes = courseData.holes.filter(h => h.hole >= 10 && h.hole <= 18);
+        
+        for (const fromPlayerId in handicapMatrix) {
+          strokeAlloc[fromPlayerId] = {};
+          for (const toPlayerId in handicapMatrix[fromPlayerId]) {
+            const front9Total = handicapMatrix[fromPlayerId][toPlayerId].front9 || 0;
+            const back9Total = handicapMatrix[fromPlayerId][toPlayerId].back9 || 0;
+            
+            strokeAlloc[fromPlayerId][toPlayerId] = {
+              front9: allocateStrokesFor9Holes(front9Total, front9Holes, turboValues),
+              back9: allocateStrokesFor9Holes(back9Total, back9Holes, turboValues)
+            };
+          }
+        }
+        
+        console.log('Converted H2H stroke allocation:', strokeAlloc);
+        setH2hStrokeAllocation(strokeAlloc);
+      } catch (err) {
+        console.warn('Failed to load H2H matrix:', err);
+      }
 
       setLoading(false);
     } catch (err) {
@@ -704,20 +743,24 @@ function GamePlay() {
                   </td>
                   {sortedPlayers.map((player, index) => {
                     const handicapDisplay = getStrokeDisplay(strokeAllocation, effectiveViewPlayerId, player.id, hole.hole);
+                    console.log(`Hole ${hole.hole}, Player ${player.username}:`, handicapDisplay);
                     return (
                       <td key={player.id} className={`score-cell-vertical ${index === 0 ? 'focus-player' : ''}`}>
-                        <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                        <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'visible' }}>
                           {handicapDisplay.display && (
                             <div 
+                              className="handicap-indicator"
                               style={{
                                 position: 'absolute',
                                 top: '2px',
                                 right: '2px',
-                                fontSize: '0.75rem',
+                                fontSize: '1rem',
                                 fontWeight: 'bold',
                                 color: handicapDisplay.color,
-                                zIndex: 1,
-                                lineHeight: 1
+                                zIndex: 100,
+                                lineHeight: 1,
+                                pointerEvents: 'none',
+                                textShadow: '0 0 3px white, 0 0 3px white'
                               }}
                             >
                               {handicapDisplay.display}
@@ -867,18 +910,21 @@ function GamePlay() {
                     const handicapDisplay = getStrokeDisplay(strokeAllocation, effectiveViewPlayerId, player.id, hole.hole);
                     return (
                       <td key={player.id} className={`score-cell-vertical ${index === 0 ? 'focus-player' : ''}`}>
-                        <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                        <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'visible' }}>
                           {handicapDisplay.display && (
                             <div 
+                              className="handicap-indicator"
                               style={{
                                 position: 'absolute',
                                 top: '2px',
                                 right: '2px',
-                                fontSize: '0.75rem',
+                                fontSize: '1rem',
                                 fontWeight: 'bold',
                                 color: handicapDisplay.color,
-                                zIndex: 1,
-                                lineHeight: 1
+                                zIndex: 100,
+                                lineHeight: 1,
+                                pointerEvents: 'none',
+                                textShadow: '0 0 3px white, 0 0 3px white'
                               }}
                             >
                               {handicapDisplay.display}
