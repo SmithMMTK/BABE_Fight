@@ -80,7 +80,7 @@ if [ ! -z "$SQL_SERVER_FQDN" ]; then
   az containerapp update \
     --name $CONTAINER_APP_NAME \
     --resource-group $RESOURCE_GROUP \
-    --image $ACR_LOGIN_SERVER/babe-fight:latest \
+    --image $ACR_LOGIN_SERVER/babe-fight:$VERSION_TAG \
     --set-env-vars \
       DB_TYPE=mssql \
       DB_SERVER=$SQL_SERVER_FQDN \
@@ -94,7 +94,7 @@ else
   az containerapp update \
     --name $CONTAINER_APP_NAME \
     --resource-group $RESOURCE_GROUP \
-    --image $ACR_LOGIN_SERVER/babe-fight:latest \
+    --image $ACR_LOGIN_SERVER/babe-fight:$VERSION_TAG \
     --output none
 fi
 
