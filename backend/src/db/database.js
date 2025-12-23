@@ -225,7 +225,12 @@ const db = {
       return { changes: result.rowsAffected[0] };
     } else {
       const stmt = sqliteDb.prepare(query);
-      return stmt.run(...params);
+      const result = stmt.run(...params);
+      // SQLite returns lastInsertRowid, normalize to lastID for compatibility
+      return { 
+        lastID: result.lastInsertRowid, 
+        changes: result.changes 
+      };
     }
   },
 
