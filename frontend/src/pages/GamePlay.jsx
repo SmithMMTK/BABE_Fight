@@ -41,6 +41,13 @@ function GamePlay() {
   const sessionData = getSession();
   const { isHost, hostPin, guestPin, username } = sessionData || {};
 
+  // Calculate stroke allocation for H2H handicap
+  // Must be called before any conditional returns to maintain hook order
+  const strokeAllocation = useMemo(() => {
+    if (!course || !players || players.length === 0) return {};
+    return calculateStrokeAllocation(players, course.holes, turboValues);
+  }, [players, course, turboValues]);
+
   useEffect(() => {
     // Fetch version info
     const fetchVersion = async () => {
@@ -424,12 +431,6 @@ function GamePlay() {
     if (b.id === effectiveViewPlayerId) return 1;
     return 0;
   });
-
-  // Calculate stroke allocation for H2H handicap
-  const strokeAllocation = useMemo(() => {
-    if (!course || !players || players.length === 0) return {};
-    return calculateStrokeAllocation(players, course.holes, turboValues);
-  }, [players, course, turboValues]);
 
   // Function to check if current user can edit a score
   const canEditScore = (playerId) => {
