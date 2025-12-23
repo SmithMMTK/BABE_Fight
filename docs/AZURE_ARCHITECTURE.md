@@ -14,6 +14,7 @@ BABE Fight is deployed as a containerized application on Azure Container Apps, u
 
 ### Azure Resources
 
+**With SQLite (Current Setup):**
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                    Resource Group                        │
@@ -23,7 +24,7 @@ BABE Fight is deployed as a containerized application on Azure Container Apps, u
 │  │  - Basic SKU                                       │ │
 │  └────────────────────────────────────────────────────┘ │
 │  ┌────────────────────────────────────────────────────┐ │
-│  │  Storage Account                                   │ │
+│  │  Storage Account (REQUIRED for SQLite)            │ │
 │  │  ├─ Azure File Share (sqlitedata)                 │ │
 │  │  └─ Mounted at: /app/backend/data                 │ │
 │  └────────────────────────────────────────────────────┘ │
@@ -40,6 +41,37 @@ BABE Fight is deployed as a containerized application on Azure Container Apps, u
 │  └────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────┘
 ```
+
+**With Azure SQL Database (Alternative):**
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Resource Group                        │
+│  ┌────────────────────────────────────────────────────┐ │
+│  │  Azure Container Registry (ACR)                    │ │
+│  │  - Stores Docker images                            │ │
+│  └────────────────────────────────────────────────────┘ │
+│  ┌────────────────────────────────────────────────────┐ │
+│  │  Azure SQL Database (REPLACES Storage Account)    │ │
+│  │  ├─ Managed database service                      │ │
+│  │  ├─ Connection via connection string              │ │
+│  │  └─ NO file storage needed                        │ │
+│  └────────────────────────────────────────────────────┘ │
+│  ┌────────────────────────────────────────────────────┐ │
+│  │  Container Apps Environment                        │ │
+│  │  ├─ Container App (babe-fight-app)                │ │
+│  │  │  ├─ Image: ACR/babe-fight:latest               │ │
+│  │  │  ├─ Port: 8080                                 │ │
+│  │  │  ├─ Replicas: 1-3 (auto-scale)                │ │
+│  │  │  ├─ CPU: 0.5 vCPU                              │ │
+│  │  │  ├─ Memory: 1GB                                │ │
+│  │  │  ├─ NO volume mount needed                    │ │
+│  │  │  └─ Env: DATABASE_CONNECTION_STRING           │ │
+│  │  └─ Ingress: External HTTPS                       │ │
+│  └────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────┘
+```
+
+> **💡 Note**: Storage Account is **only needed for SQLite**. If you migrate to Azure SQL Database, you can remove the Storage Account entirely, simplifying deployment and reducing costs by ~$1/month.
 
 ## Request Flow
 
@@ -207,19 +239,34 @@ Output: `https://babe-fight-app.xxx.azurecontainerapps.io`
 
 ### Estimated Monthly Costs
 
-**Always-On Configuration (min-replicas=1):**
+**With SQLite + Storage Account:**
+
+*Always-On (min-replicas=1):*
 - Container Apps: ~$15-25/month
-  - 0.5 vCPU × 1-3 replicas
-  - 1GB RAM × 1-3 replicas
 - Container Registry (Basic): ~$5/month
 - Storage Account (1GB File Share): ~$1/month
 - **Total**: ~$20-30/month
 
-**Scale-to-Zero Configuration (min-replicas=0):**
+*Scale-to-Zero (min-replicas=0):*
 - Container Apps: ~$5-10/month (usage-based)
 - Container Registry: ~$5/month
 - Storage Account: ~$1/month
-- **Total**: ~$10-15/month (for low traffic)
+- **Total**: ~$10-15/month
+
+**With Azure SQL Database (Alternative):**
+
+*Always-On (min-replicas=1):*
+- Container Apps: ~$15-25/month
+- Container Registry (Basic): ~$5/month
+- Azure SQL (Basic tier): ~$5/month
+- **Total**: ~$25-35/month
+
+*Benefits of Azure SQL:*
+- ✅ Supports multiple replicas (no SQLite lock issues)
+- ✅ Automatic backups included
+- ✅ Better performance for concurrent users
+- ✅ No volume mount complexity
+- ✅ Point-in-time restore capability
 
 ## Network Configuration
 
@@ -283,14 +330,22 @@ Output: `https://babe-fight-app.xxx.azurecontainerapps.io`
 
 If the application grows beyond current setup:
 
-1. **Separate Frontend & Backend**
+1. **Migrate to Azure SQL Database** (Recommended)
+   - Replace SQLite with Azure SQL Database
+   - **Remove Storage Account** (no longer needed)
+   - Update backend to use connection string
+   - Benefits: 
+     - Better concurrency (supports multiple replicas)
+     - Automatic backups and point-in-time restore
+     - Better performance and scalability
+     - Simpler deployment (no volume mounts)
+   - Setup: Run `../scripts/create-azure-sql.sh`
+   - Cost: +$5-15/month (Basic tier), -$1/month (remove storage)
+
+2. **Separate Frontend & Backend**
    - Frontend → Azure Static Web Apps
    - Backend → Container Apps
    - Benefits: Better caching, CDN for frontend
-
-2. **Managed Database**
-   - Replace SQLite with Azure SQL Database
-   - Benefits: Better concurrency, backups, scaling
 
 3. **Azure Kubernetes Service (AKS)**
    - For complex microservices architecture
@@ -324,12 +379,12 @@ az containerapp show --name babe-fight-app --resource-group babe-fight-rg \
 
 Key files in the repository:
 
-- **[Dockerfile](Dockerfile)**: Multi-stage build configuration
-- **[deploy-container-apps.sh](deploy-container-apps.sh)**: Full deployment automation
-- **[update-app.sh](update-app.sh)**: Quick update script for code changes
+- **[../Dockerfile](../Dockerfile)**: Multi-stage build configuration
+- **[../scripts/deploy-container-apps.sh](../scripts/deploy-container-apps.sh)**: Full deployment automation (SQLite + Storage Account)
+- **[../scripts/update-app.sh](../scripts/update-app.sh)**: Quick update script for code changes
 - **[CONTAINER_APPS_DEPLOY.md](CONTAINER_APPS_DEPLOY.md)**: Step-by-step deployment guide
-- **[setup-docker-buildx.sh](setup-docker-buildx.sh)**: Configure Docker for cross-platform builds
-- **[create-azure-sql.sh](create-azure-sql.sh)**: Alternative SQL database setup
+- **[../scripts/setup-docker-buildx.sh](../scripts/setup-docker-buildx.sh)**: Configure Docker for cross-platform builds
+- **[../scripts/create-azure-sql.sh](../scripts/create-azure-sql.sh)**: Migrate to Azure SQL Database (removes need for Storage Account)
 
 ## Quick Reference Commands
 

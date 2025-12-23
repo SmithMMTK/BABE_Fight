@@ -1,9 +1,16 @@
 
 # Commit Logs
 
-## Done
-- Add Azure Container App documentation
 
 ## Work items
-- Add HC calculation between players
+
+### Remove Storage Account
+
+- Delete Storage Account
+- Update deployment files
+- Test deployment
+- Verify functions = Work
+
+
+### Add HC calculation between players
 

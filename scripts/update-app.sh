@@ -10,6 +10,11 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# Determine script directory and project root
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT="$( cd "$SCRIPT_DIR/.." && pwd )"
+DEPLOYMENT_INFO="$PROJECT_ROOT/.azure-deployment-info"
+
 # Check if Docker is running
 if ! docker info &> /dev/null; then
     echo -e "${RED}Error: Docker is not running${NC}"
@@ -18,13 +23,13 @@ if ! docker info &> /dev/null; then
 fi
 
 # Read configuration from deployment info file
-if [ ! -f ".azure-deployment-info" ]; then
+if [ ! -f "$DEPLOYMENT_INFO" ]; then
     echo -e "${RED}Error: Deployment info not found${NC}"
-    echo "Please run ./deploy-container-apps.sh first"
+    echo "Please run ./scripts/deploy-container-apps.sh first"
     exit 1
 fi
 
-source .azure-deployment-info
+source "$DEPLOYMENT_INFO"
 
 echo -e "${YELLOW}Configuration:${NC}"
 echo "Resource Group: $RESOURCE_GROUP"
@@ -46,6 +51,10 @@ VERSION_TAG="v$TIMESTAMP"
 
 echo -e "${GREEN}Step 2: Building new Docker image (AMD64)...${NC}"
 echo "Tags: latest, $VERSION_TAG"
+
+# Change to project root for docker build
+cd "$PROJECT_ROOT"
+
 docker buildx build \
   --platform linux/amd64 \
   -t $ACR_LOGIN_SERVER/babe-fight:latest \
@@ -60,33 +69,28 @@ docker push $ACR_LOGIN_SERVER/babe-fight:$VERSION_TAG
 # Update Container App
 echo -e "${GREEN}Step 4: Updating Container App...${NC}"
 
-# Read SQL configuration if exists
-if [ -f ".azure-deployment-info" ]; then
-  source .azure-deployment-info
-  
-  # Set environment variables if SQL is configured
-  if [ ! -z "$SQL_SERVER_FQDN" ]; then
-    echo "Configuring Azure SQL Database connection..."
-    az containerapp update \
-      --name $CONTAINER_APP_NAME \
-      --resource-group $RESOURCE_GROUP \
-      --image $ACR_LOGIN_SERVER/babe-fight:latest \
-      --set-env-vars \
-        DB_TYPE=mssql \
-        DB_SERVER=$SQL_SERVER_FQDN \
-        DB_NAME=$SQL_DB_NAME \
-        DB_USER=$SQL_ADMIN_USER \
-        DB_PASSWORD="$SQL_ADMIN_PASSWORD" \
-        DB_ENCRYPT=true \
-      --output none
-  else
-    # No SQL configured, just update image
-    az containerapp update \
-      --name $CONTAINER_APP_NAME \
-      --resource-group $RESOURCE_GROUP \
-      --image $ACR_LOGIN_SERVER/babe-fight:latest \
-      --output none
-  fi
+# Set environment variables if SQL is configured
+if [ ! -z "$SQL_SERVER_FQDN" ]; then
+  echo "Configuring Azure SQL Database connection..."
+  az containerapp update \
+    --name $CONTAINER_APP_NAME \
+    --resource-group $RESOURCE_GROUP \
+    --image $ACR_LOGIN_SERVER/babe-fight:latest \
+    --set-env-vars \
+      DB_TYPE=mssql \
+      DB_SERVER=$SQL_SERVER_FQDN \
+      DB_NAME=$SQL_DB_NAME \
+      DB_USER=$SQL_ADMIN_USER \
+      DB_PASSWORD="$SQL_ADMIN_PASSWORD" \
+      DB_ENCRYPT=true \
+    --output none
+else
+  # No SQL configured, just update image
+  az containerapp update \
+    --name $CONTAINER_APP_NAME \
+    --resource-group $RESOURCE_GROUP \
+    --image $ACR_LOGIN_SERVER/babe-fight:latest \
+    --output none
 fi
 
 # Get app URL
