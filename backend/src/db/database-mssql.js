@@ -60,7 +60,7 @@ async function initializeDatabase() {
         username NVARCHAR(255) NOT NULL,
         role NVARCHAR(10) CHECK(role IN ('host', 'player')) NOT NULL,
         joined_at DATETIME DEFAULT GETDATE(),
-        FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE,
+        FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE NO ACTION,
         CONSTRAINT unique_game_username UNIQUE(game_id, username)
       );
     `);
@@ -73,7 +73,7 @@ async function initializeDatabase() {
         hole_number INT NOT NULL,
         score INT,
         updated_at DATETIME DEFAULT GETDATE(),
-        FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE,
+        FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE NO ACTION,
         CONSTRAINT unique_player_hole UNIQUE(player_id, hole_number)
       );
     `);
