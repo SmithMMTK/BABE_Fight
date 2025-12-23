@@ -92,5 +92,95 @@ Implement Head-to-Head (H2H) handicap calculation between players based on the a
 4. Deploy to Azure Container Apps with production database
 5. Update Container App environment variables if needed
 
+---
+
+## 🎉 MAJOR MILESTONE: Azure Infrastructure Complete (Dec 23, 2025)
+**Commit:** cf89ebb - "feat: Add quick update deployment script and complete Azure migration"
+
+### Infrastructure Established ✅
+**New Azure Setup:**
+- **Resource Group**: `01-babe-fight` (with SecurityControl=Ignore tag)
+- **Container Registry**: `babefightacr1766476411`
+- **SQL Server**: `babefight-sql-1766476411.database.windows.net`
+- **SQL Database**: `babefightdb` (shared local + production)
+- **Container Apps Env**: `babe-fight-env`
+- **Container App**: `babe-fight-app`
+- **NO Storage Account** (removed - not needed)
+
+### Production URLs
+- **App URL**: https://babe-fight-app.redpond-132478eb.southeastasia.azurecontainerapps.io
+- **SQL Server**: babefight-sql-1766476411.database.windows.net
+- **Database**: babefightdb (Basic tier)
+
+### Deployment Workflow
+1. **Quick Update** (incremental changes):
+   ```bash
+   bash scripts/quick-update.sh
+   ```
+   - Fast Docker build & push
+   - Container App auto-updates
+   - ~5-10 minutes
+
+2. **Full Deployment** (if needed):
+   - Use for infrastructure changes
+   - Environment variable updates
+   - Configuration changes
+
+### Database Strategy
+- **Single Database**: `babefightdb` shared between local dev and Azure production
+- **Connection**: Both environments use same Azure SQL
+- **Benefits**: 
+  - Real-time data sync
+  - No migration needed
+  - Consistent testing environment
+  - True production parity
+
+### Local Development Status ✅
+- Backend: http://localhost:8080
+- Frontend: http://localhost:5173/
+- Database: Connected to Azure SQL
+- WebSocket: Working
+- Schema: Initialized
+
+### What Changed From Previous Setup
+**Removed:**
+- Old resource group: `babe-fight-rg` (deleted)
+- Storage Account dependency
+- Old SQL Server: `babefight-sql-1766424549`
+- Complex deployment scripts
+
+**Added:**
+- Simplified deployment with `quick-update.sh`
+- Direct Azure SQL access from local dev
+- IP range firewall rules (167.220.255.0-255)
+- Automated version tagging
+
+### Ready for Next Phase ✅
+All infrastructure is stable and production-ready:
+- ✅ H2H handicap feature fully functional
+- ✅ Database persistence working
+- ✅ Local and production environments aligned
+- ✅ Quick deployment workflow established
+- ✅ Monitoring and logs accessible
+
+### Commands Reference
+```bash
+# Quick deployment
+bash scripts/quick-update.sh
+
+# View logs
+az containerapp logs show --name babe-fight-app --resource-group 01-babe-fight --follow
+
+# Check resources
+az resource list --resource-group 01-babe-fight --output table
+
+# Test local connection
+cd backend && node test-connection.mjs
+```
+
+---
+
+### Next Features Ready to Build
+
 
 
