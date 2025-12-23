@@ -1,4 +1,4 @@
-import db from '../db/database.js';
+import db from '../db/database-mssql.js';
 
 export function setupGameSocket(io) {
   io.on('connection', (socket) => {

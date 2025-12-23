@@ -126,12 +126,16 @@ const db = {
     const pool = await getPool();
     const request = pool.request();
     
-    // Add parameters
-    params.forEach((param, index) => {
-      request.input(`param${index}`, param);
+    // Replace ? with named parameters (@param0, @param1, etc.)
+    let paramIndex = 0;
+    const convertedSql = sql.replace(/\?/g, () => {
+      const paramName = `param${paramIndex}`;
+      request.input(paramName, params[paramIndex]);
+      paramIndex++;
+      return `@${paramName}`;
     });
     
-    const result = await request.query(sql);
+    const result = await request.query(convertedSql);
     return result;
   },
 
@@ -146,8 +150,35 @@ const db = {
   },
 
   async run(sql, params = []) {
-    const result = await this.query(sql, params);
-    return result.rowsAffected[0];
+    const pool = await getPool();
+    const request = pool.request();
+    
+    // Replace ? with named parameters and detect if this is an INSERT
+    let paramIndex = 0;
+    const convertedSql = sql.replace(/\?/g, () => {
+      const paramName = `param${paramIndex}`;
+      request.input(paramName, params[paramIndex]);
+      paramIndex++;
+      return `@${paramName}`;
+    });
+    
+    // For INSERT statements, add OUTPUT INSERTED.id to capture the ID
+    const isInsert = /^\s*INSERT\s+INTO/i.test(convertedSql);
+    let finalSql = convertedSql;
+    if (isInsert && !convertedSql.includes('OUTPUT')) {
+      finalSql = convertedSql.replace(
+        /INSERT\s+INTO\s+(\w+)\s*\(([^)]+)\)/i,
+        'INSERT INTO $1 ($2) OUTPUT INSERTED.id'
+      );
+    }
+    
+    const result = await request.query(finalSql);
+    
+    // Return an object similar to SQLite's result
+    return { 
+      lastID: result.recordset && result.recordset[0] ? result.recordset[0].id : null,
+      rowsAffected: result.rowsAffected 
+    };
   },
 
   // Helper to get last inserted ID
