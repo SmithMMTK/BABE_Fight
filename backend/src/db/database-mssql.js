@@ -38,56 +38,15 @@ async function initializeDatabase() {
   try {
     const pool = await getPool();
     
-    // Fix existing CASCADE constraints that conflict with H2H handicap table
-    // Drop and recreate with NO ACTION
+    // Drop game_handicap_h2h if exists to recreate with correct constraints
     try {
-      // Drop existing FK constraints on players table if they have CASCADE
       await pool.request().query(`
-        IF EXISTS (
-          SELECT * FROM sys.foreign_keys 
-          WHERE parent_object_id = OBJECT_ID('players') 
-          AND delete_referential_action = 1
-        )
-        BEGIN
-          DECLARE @fk_name NVARCHAR(255);
-          SELECT @fk_name = name FROM sys.foreign_keys 
-          WHERE parent_object_id = OBJECT_ID('players') 
-          AND referenced_object_id = OBJECT_ID('games');
-          
-          IF @fk_name IS NOT NULL
-          BEGIN
-            EXEC('ALTER TABLE players DROP CONSTRAINT ' + @fk_name);
-            ALTER TABLE players 
-            ADD CONSTRAINT FK_players_games 
-            FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE NO ACTION;
-          END
-        END;
+        IF EXISTS (SELECT * FROM sysobjects WHERE name='game_handicap_h2h' AND xtype='U')
+        DROP TABLE game_handicap_h2h;
       `);
-
-      // Drop existing FK constraints on scores table if they have CASCADE
-      await pool.request().query(`
-        IF EXISTS (
-          SELECT * FROM sys.foreign_keys 
-          WHERE parent_object_id = OBJECT_ID('scores') 
-          AND delete_referential_action = 1
-        )
-        BEGIN
-          DECLARE @fk_name NVARCHAR(255);
-          SELECT @fk_name = name FROM sys.foreign_keys 
-          WHERE parent_object_id = OBJECT_ID('scores') 
-          AND referenced_object_id = OBJECT_ID('players');
-          
-          IF @fk_name IS NOT NULL
-          BEGIN
-            EXEC('ALTER TABLE scores DROP CONSTRAINT ' + @fk_name);
-            ALTER TABLE scores 
-            ADD CONSTRAINT FK_scores_players 
-            FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE NO ACTION;
-          END
-        END;
-      `);
+      console.log('Dropped existing game_handicap_h2h table');
     } catch (err) {
-      console.log('Note: Could not update FK constraints (may not exist yet):', err.message);
+      console.log('Note: game_handicap_h2h table does not exist yet');
     }
     
     // Create tables if they don't exist
@@ -138,7 +97,7 @@ async function initializeDatabase() {
         hole_number INT NOT NULL,
         multiplier INT DEFAULT 1,
         updated_at DATETIME DEFAULT GETDATE(),
-        FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE,
+        FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE NO ACTION,
         CONSTRAINT unique_game_hole UNIQUE(game_id, hole_number)
       );
     `);
