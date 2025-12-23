@@ -551,6 +551,14 @@
   border: 1px solid rgba(255,255,255,0.2);
 }
 
+.player-col-vertical.focus-player,
+.score-cell-vertical.focus-player,
+.total-cell.focus-player {
+  background-color: rgba(76, 175, 80, 0.15);
+  border-left: 3px solid #4CAF50;
+  font-weight: 800;
+}
+
 .hole-number-vertical {
   display: flex;
   align-items: center;

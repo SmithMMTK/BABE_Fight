@@ -645,8 +645,8 @@ function GamePlay() {
                       </div>
                     </div>
                   </td>
-                  {sortedPlayers.map(player => (
-                    <td key={player.id} className="score-cell-vertical">
+                  {sortedPlayers.map((player, index) => (
+                    <td key={player.id} className={`score-cell-vertical ${index === 0 ? 'focus-player' : ''}`}>
                       {scores[player.id]?.[hole.hole] ? (
                         <div 
                           className={`score-display ${getScoreClass(scores[player.id][hole.hole], hole.par)}`}
@@ -683,8 +683,8 @@ function GamePlay() {
               {/* Front 9 Total */}
               <tr className="total-row">
                 <td className="hole-par-col-vertical"><strong>1-9</strong></td>
-                {sortedPlayers.map(player => (
-                  <td key={player.id} className="total-cell">
+                {sortedPlayers.map((player, index) => (
+                  <td key={player.id} className={`total-cell ${index === 0 ? 'focus-player' : ''}`}>
                     <strong>{calculateFront9(player.id)}</strong>
                   </td>
                 ))}
@@ -756,8 +756,8 @@ function GamePlay() {
                       </div>
                     </div>
                   </td>
-                  {sortedPlayers.map(player => (
-                    <td key={player.id} className="score-cell-vertical">
+                  {sortedPlayers.map((player, index) => (
+                    <td key={player.id} className={`score-cell-vertical ${index === 0 ? 'focus-player' : ''}`}>
                       {scores[player.id]?.[hole.hole] ? (
                         <div 
                           className={`score-display ${getScoreClass(scores[player.id][hole.hole], hole.par)}`}
@@ -794,8 +794,8 @@ function GamePlay() {
               {/* Back 9 Total */}
               <tr className="total-row">
                 <td className="hole-par-col-vertical"><strong>10-18</strong></td>
-                {sortedPlayers.map(player => (
-                  <td key={player.id} className="total-cell">
+                {sortedPlayers.map((player, index) => (
+                  <td key={player.id} className={`total-cell ${index === 0 ? 'focus-player' : ''}`}>
                     <strong>{calculateBack9(player.id)}</strong>
                   </td>
                 ))}
@@ -803,8 +803,8 @@ function GamePlay() {
               {/* Grand Total */}
               <tr className="total-row final-row">
                 <td className="hole-par-col-vertical"><strong>Total</strong></td>
-                {sortedPlayers.map(player => (
-                  <td key={player.id} className="total-cell final">
+                {sortedPlayers.map((player, index) => (
+                  <td key={player.id} className={`total-cell final ${index === 0 ? 'focus-player' : ''}`}>
                     <strong>{calculateTotal(player.id)}</strong>
                   </td>
                 ))}
