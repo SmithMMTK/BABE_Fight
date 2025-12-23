@@ -4,10 +4,14 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
 import gamesRouter from './routes/games.js';
 import scoresRouter from './routes/scores.js';
 import versionRouter from './routes/version.js';
 import { setupGameSocket } from './sockets/gameSocket.js';
+
+// Load environment variables
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -51,7 +55,19 @@ app.get('*', (req, res) => {
 setupGameSocket(io);
 
 const PORT = process.env.PORT || 8080;
+const DB_TYPE = process.env.DB_TYPE || 'sqlite';
+const DB_NAME = process.env.DB_NAME || 'local';
+
 httpServer.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📱 Access from network: http://<your-ip>:${PORT}`);
+  console.log(`💾 Database: ${DB_TYPE.toUpperCase()} ${DB_TYPE === 'mssql' ? `(${DB_NAME})` : '(local SQLite)'}`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  
+  if (DB_TYPE === 'sqlite') {
+    console.log('⚠️  Using SQLite - OK for prototyping, but test with Azure SQL before deploying!');
+    console.log('💡 Setup Azure SQL locally: bash scripts/setup-local-azure-sql.sh');
+  } else {
+    console.log('✅ Using Azure SQL - Production-like environment');
+  }
 });

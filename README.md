@@ -19,14 +19,38 @@ Multi-player real-time golf scorecard application with WebSocket synchronization
 
 ## Quick Start (Local Development)
 
+### Option 1: SQLite (Quick Prototyping)
+
 ```bash
-# Run the project
+# Run with SQLite (fastest for testing UI changes)
 ./scripts/run-local.sh
 
 # Access application
 Frontend: http://localhost:5173
 Backend: http://localhost:8080
 ```
+
+### Option 2: Azure SQL (Production-like Environment) **RECOMMENDED**
+
+**Why?** Catch SQL Server-specific issues (constraints, data types) before deploying to production!
+
+```bash
+# One-time setup: Configure local environment to use Azure SQL
+./scripts/setup-local-azure-sql.sh
+
+# Then run normally
+./scripts/run-local.sh
+
+# Your local app now uses Azure SQL Database!
+```
+
+📚 See [docs/setup/LOCAL_AZURE_SQL_SETUP.md](./docs/setup/LOCAL_AZURE_SQL_SETUP.md) for detailed setup guide.
+
+**Benefits of Azure SQL locally:**
+- ✅ Same database engine as production (MSSQL)
+- ✅ Catch foreign key constraint issues early
+- ✅ Test schema changes before deployment
+- ✅ No surprises in production!
 
 ## Production Deployment
 
