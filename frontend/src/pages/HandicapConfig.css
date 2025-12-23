@@ -1,34 +1,49 @@
 .handicap-config {
-  padding: 1rem;
-  max-width: 1200px;
+  padding: 0.5rem;
+  max-width: 100%;
   margin: 0 auto;
+  overflow-x: hidden;
 }
 
 .handicap-header {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
   border-bottom: 2px solid var(--color-primary);
 }
 
 .handicap-header h1 {
   margin: 0;
-  font-size: 1.75rem;
+  font-size: 1.2rem;
   color: var(--color-primary);
+  flex: 1;
+}
+
+.saving-indicator {
+  color: #666;
+  font-size: 0.75rem;
+  font-style: italic;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
 }
 
 .btn-back {
   background: transparent;
   border: 1px solid var(--color-primary);
   color: var(--color-primary);
-  padding: 0.5rem 1rem;
+  padding: 0.4rem 0.75rem;
   border-radius: 0.5rem;
-  font-size: 1rem;
+  font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
 .btn-back:hover {
@@ -38,116 +53,158 @@
 
 .handicap-description {
   background: #f8f9fa;
-  padding: 1rem;
+  padding: 0.6rem;
   border-radius: 0.5rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .handicap-description p {
-  margin: 0.5rem 0;
+  margin: 0.3rem 0;
   color: var(--color-text);
-  font-size: 0.95rem;
+  font-size: 0.75rem;
 }
 
 .handicap-description .note {
   color: #666;
-  font-size: 0.85rem;
+  font-size: 0.7rem;
   font-style: italic;
+  margin-top: 0.3rem;
 }
 
-.handicap-tables {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-
-.player-handicap-section {
+/* Matrix Sections (Front 9 / Back 9) */
+.matrix-section {
+  margin-bottom: 1rem;
   background: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border: 2px solid var(--color-primary);
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-.player-handicap-section .player-name {
-  margin: 0 0 1rem 0;
-  font-size: 1.25rem;
-  color: var(--color-primary);
-  padding-bottom: 0.75rem;
-  border-bottom: 2px solid #f0f0f0;
-}
-
-.handicap-grid {
-  overflow-x: auto;
-}
-
-.handicap-table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 400px;
-}
-
-.handicap-table thead {
-  background: var(--color-primary);
+.matrix-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
   color: white;
-}
-
-.handicap-table th {
-  padding: 0.75rem;
-  text-align: left;
-  font-weight: 600;
-  font-size: 0.95rem;
-}
-
-.handicap-table th.opponent-col {
-  width: 40%;
-}
-
-.handicap-table th.nine-col {
-  width: 30%;
+  background: var(--color-primary);
+  padding: 0.5rem;
+  border-radius: 0.5rem;
   text-align: center;
 }
 
-.handicap-table tbody tr {
-  border-bottom: 1px solid #f0f0f0;
-  transition: background 0.2s ease;
+.matrix-wrapper {
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
-.handicap-table tbody tr:hover {
+/* Matrix Table */
+.handicap-matrix {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  table-layout: fixed;
+}
+
+.handicap-matrix thead {
+  background: var(--color-primary);
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.handicap-matrix th {
+  padding: 0.4rem 0.2rem;
+  font-weight: 600;
+  font-size: 0.7rem;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.handicap-matrix .corner-cell {
+  background: var(--color-primary);
+  width: 12%;
+}
+
+.handicap-matrix .player-header {
+  background: var(--color-primary);
+  width: 14.6%;
+}
+
+.handicap-matrix .player-row-header {
+  background: #f8f9fa;
+  color: var(--color-text);
+  font-weight: 600;
+  font-size: 0.7rem;
+  text-align: left;
+  padding-left: 0.4rem;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  border-right: 2px solid var(--color-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.handicap-matrix tbody tr {
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.handicap-matrix tbody tr:hover {
   background: #f8f9fa;
 }
 
-.handicap-table td {
-  padding: 0.75rem;
+.matrix-cell {
+  padding: 0.15rem;
+  text-align: center;
+  border-right: 1px solid #f0f0f0;
 }
 
-.handicap-table td.opponent-name {
-  font-weight: 600;
-  color: var(--color-text);
-}
-
-.handicap-input {
-  width: 80px;
-  padding: 0.5rem;
+.matrix-select {
+  width: 100%;
+  max-width: 45px;
+  padding: 0.25rem 0.1rem;
   border: 2px solid #ddd;
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  font-weight: 600;
+  border-radius: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 700;
   text-align: center;
   transition: all 0.2s ease;
+  background: white;
+  box-sizing: border-box;
+  cursor: pointer;
+  /* Hide dropdown arrow */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
 }
 
-.handicap-input:focus {
+.matrix-select:focus {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(44, 62, 80, 0.1);
 }
 
-.handicap-input::-webkit-inner-spin-button,
-.handicap-input::-webkit-outer-spin-button {
-  opacity: 1;
+.matrix-select.positive {
+  color: #388e3c;
+  border-color: #c8e6c9;
+  background: #e8f5e9;
 }
 
+.matrix-select.negative {
+  color: #d32f2f;
+  border-color: #ffcdd2;
+  background: #ffebee;
+}
+
+.same-player {
+  color: #999;
+  font-size: 1rem;
+  font-weight: 300;
+  user-select: none;
+}
+
+/* Actions */
 .handicap-actions {
   display: flex;
   gap: 1rem;
@@ -220,27 +277,43 @@
     padding: 0.5rem;
   }
 
+  .handicap-header {
+    gap: 0.5rem;
+  }
+
   .handicap-header h1 {
     font-size: 1.25rem;
   }
 
-  .handicap-table th,
-  .handicap-table td {
-    padding: 0.5rem;
-    font-size: 0.85rem;
+  .btn-back {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.9rem;
   }
 
-  .handicap-input {
-    width: 60px;
+  .matrix-title {
+    font-size: 1.1rem;
+    padding: 0.6rem;
+  }
+
+  .handicap-matrix th {
+    padding: 0.5rem 0.25rem;
+    font-size: 0.8rem;
+  }
+
+  .matrix-input {
+    width: 50px;
+    padding: 0.3rem;
     font-size: 0.9rem;
   }
 
   .handicap-actions {
     flex-direction: column;
+    gap: 0.75rem;
   }
 
   .btn-save,
   .btn-cancel {
     width: 100%;
+    min-width: unset;
   }
 }

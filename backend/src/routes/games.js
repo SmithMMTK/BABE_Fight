@@ -133,7 +133,126 @@ router.post('/join', async (req, res) => {
   }
 });
 
-// Get game details
+// Get courses from GitHub (must come before /:gameId)
+router.get('/courses/list', async (req, res) => {
+  try {
+    const response = await axios.get(
+      'https://raw.githubusercontent.com/SmithMMTK/BABE_Fight/refs/heads/main/Resources/courses.json'
+    );
+    const enhancedCourses = response.data.map(enhanceCourseData);
+    res.json(enhancedCourses);
+  } catch (error) {
+    console.error('Get courses error:', error);
+    res.status(500).json({ error: 'Failed to fetch courses' });
+  }
+});
+
+// Get handicap matrix and stroke allocation for a game (must come before /:gameId)
+router.get('/:gameId/handicap-matrix', async (req, res) => {
+  try {
+    const { gameId } = req.params;
+
+    // Get all players
+    const players = await db.all(
+      'SELECT id, username, role, handicap FROM players WHERE game_id = ? ORDER BY joined_at',
+      [gameId]
+    );
+
+    if (!players || players.length === 0) {
+      return res.json({ players: [], handicapMatrix: {}, strokeAllocation: {} });
+    }
+
+    // Get H2H handicap data
+    const h2hData = await db.all(
+      'SELECT from_player_id, to_player_id, front9_strokes, back9_strokes FROM game_handicap_h2h WHERE game_id = ?',
+      [gameId]
+    );
+
+    // Build handicap matrix
+    const handicapMatrix = {};
+    players.forEach(fromPlayer => {
+      handicapMatrix[fromPlayer.id] = {};
+      players.forEach(toPlayer => {
+        if (fromPlayer.id !== toPlayer.id) {
+          const h2hRecord = h2hData.find(
+            h => h.from_player_id === fromPlayer.id && h.to_player_id === toPlayer.id
+          );
+          handicapMatrix[fromPlayer.id][toPlayer.id] = {
+            front9: h2hRecord?.front9_strokes || 0,
+            back9: h2hRecord?.back9_strokes || 0
+          };
+        }
+      });
+    });
+
+    res.json({
+      players: players.map(p => ({ id: p.id, username: p.username, handicap: p.handicap })),
+      handicapMatrix
+    });
+  } catch (error) {
+    console.error('Get handicap matrix error:', error);
+    res.status(500).json({ error: 'Failed to get handicap matrix' });
+  }
+});
+
+// Update handicap matrix (must come before /:gameId)
+router.post('/:gameId/handicap-matrix', async (req, res) => {
+  try {
+    const { gameId } = req.params;
+    const { handicapMatrix } = req.body;
+
+    if (!handicapMatrix) {
+      return res.status(400).json({ error: 'Missing handicap matrix' });
+    }
+
+    // Verify game exists
+    const game = await db.get('SELECT id FROM games WHERE id = ?', [gameId]);
+    if (!game) {
+      return res.status(404).json({ error: 'Game not found' });
+    }
+
+    // Check if using SQL Server or SQLite
+    const isSQL = process.env.DB_TYPE === 'mssql';
+
+    // Update each player pair
+    for (const fromPlayerId in handicapMatrix) {
+      for (const toPlayerId in handicapMatrix[fromPlayerId]) {
+        const { front9, back9 } = handicapMatrix[fromPlayerId][toPlayerId];
+        
+        if (isSQL) {
+          // SQL Server: MERGE
+          await db.run(`
+            MERGE INTO game_handicap_h2h AS target
+            USING (SELECT ? AS game_id, ? AS from_player_id, ? AS to_player_id, ? AS front9_strokes, ? AS back9_strokes) AS source
+            ON target.game_id = source.game_id 
+              AND target.from_player_id = source.from_player_id 
+              AND target.to_player_id = source.to_player_id
+            WHEN MATCHED THEN
+              UPDATE SET front9_strokes = source.front9_strokes, back9_strokes = source.back9_strokes, updated_at = GETDATE()
+            WHEN NOT MATCHED THEN
+              INSERT (game_id, from_player_id, to_player_id, front9_strokes, back9_strokes)
+              VALUES (source.game_id, source.from_player_id, source.to_player_id, source.front9_strokes, source.back9_strokes);
+          `, [gameId, fromPlayerId, toPlayerId, front9, back9]);
+        } else {
+          // SQLite: ON CONFLICT
+          await db.run(`
+            INSERT INTO game_handicap_h2h (game_id, from_player_id, to_player_id, front9_strokes, back9_strokes)
+            VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT(game_id, from_player_id, to_player_id)
+            DO UPDATE SET front9_strokes = ?, back9_strokes = ?, updated_at = CURRENT_TIMESTAMP
+          `, [gameId, fromPlayerId, toPlayerId, front9, back9, front9, back9]);
+        }
+      }
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Update handicap matrix error:', error);
+    res.status(500).json({ error: 'Failed to update handicap matrix' });
+  }
+});
+
+// Get game details (must come after specific routes)
 router.get('/:gameId', async (req, res) => {
   try {
     const { gameId } = req.params;
@@ -152,20 +271,6 @@ router.get('/:gameId', async (req, res) => {
   } catch (error) {
     console.error('Get game error:', error);
     res.status(500).json({ error: 'Failed to get game' });
-  }
-});
-
-// Get courses from GitHub
-router.get('/courses/list', async (req, res) => {
-  try {
-    const response = await axios.get(
-      'https://raw.githubusercontent.com/SmithMMTK/BABE_Fight/refs/heads/main/Resources/courses.json'
-    );
-    const enhancedCourses = response.data.map(enhanceCourseData);
-    res.json(enhancedCourses);
-  } catch (error) {
-    console.error('Get courses error:', error);
-    res.status(500).json({ error: 'Failed to fetch courses' });
   }
 });
 
@@ -354,111 +459,6 @@ router.post('/:gameId/players/:playerId/handicap', async (req, res) => {
   } catch (error) {
     console.error('Update handicap error:', error);
     res.status(500).json({ error: 'Failed to update handicap' });
-  }
-});
-
-// Get handicap matrix and stroke allocation for a game
-router.get('/:gameId/handicap-matrix', async (req, res) => {
-  try {
-    const { gameId } = req.params;
-
-    // Get all players
-    const players = await db.all(
-      'SELECT id, username, role, handicap FROM players WHERE game_id = ? ORDER BY joined_at',
-      [gameId]
-    );
-
-    if (!players || players.length === 0) {
-      return res.json({ players: [], handicapMatrix: {}, strokeAllocation: {} });
-    }
-
-    // Get H2H handicap data
-    const h2hData = await db.all(
-      'SELECT from_player_id, to_player_id, front9_strokes, back9_strokes FROM game_handicap_h2h WHERE game_id = ?',
-      [gameId]
-    );
-
-    // Build handicap matrix
-    const handicapMatrix = {};
-    players.forEach(fromPlayer => {
-      handicapMatrix[fromPlayer.id] = {};
-      players.forEach(toPlayer => {
-        if (fromPlayer.id !== toPlayer.id) {
-          const h2hRecord = h2hData.find(
-            h => h.from_player_id === fromPlayer.id && h.to_player_id === toPlayer.id
-          );
-          handicapMatrix[fromPlayer.id][toPlayer.id] = {
-            front9: h2hRecord?.front9_strokes || 0,
-            back9: h2hRecord?.back9_strokes || 0
-          };
-        }
-      });
-    });
-
-    res.json({
-      players: players.map(p => ({ id: p.id, username: p.username, handicap: p.handicap })),
-      handicapMatrix
-    });
-  } catch (error) {
-    console.error('Get handicap matrix error:', error);
-    res.status(500).json({ error: 'Failed to get handicap matrix' });
-  }
-});
-
-// Update handicap matrix
-router.post('/:gameId/handicap-matrix', async (req, res) => {
-  try {
-    const { gameId } = req.params;
-    const { handicapMatrix } = req.body;
-
-    if (!handicapMatrix) {
-      return res.status(400).json({ error: 'Missing handicap matrix' });
-    }
-
-    // Verify game exists
-    const game = await db.get('SELECT id FROM games WHERE id = ?', [gameId]);
-    if (!game) {
-      return res.status(404).json({ error: 'Game not found' });
-    }
-
-    // Check if using SQL Server or SQLite
-    const isSQL = process.env.DB_TYPE === 'mssql';
-
-    // Update each player pair
-    for (const fromPlayerId in handicapMatrix) {
-      for (const toPlayerId in handicapMatrix[fromPlayerId]) {
-        const { front9, back9 } = handicapMatrix[fromPlayerId][toPlayerId];
-        
-        if (isSQL) {
-          // SQL Server: MERGE
-          await db.run(`
-            MERGE INTO game_handicap_h2h AS target
-            USING (SELECT ? AS game_id, ? AS from_player_id, ? AS to_player_id, ? AS front9_strokes, ? AS back9_strokes) AS source
-            ON target.game_id = source.game_id 
-              AND target.from_player_id = source.from_player_id 
-              AND target.to_player_id = source.to_player_id
-            WHEN MATCHED THEN
-              UPDATE SET front9_strokes = source.front9_strokes, back9_strokes = source.back9_strokes, updated_at = GETDATE()
-            WHEN NOT MATCHED THEN
-              INSERT (game_id, from_player_id, to_player_id, front9_strokes, back9_strokes)
-              VALUES (source.game_id, source.from_player_id, source.to_player_id, source.front9_strokes, source.back9_strokes);
-          `, [gameId, fromPlayerId, toPlayerId, front9, back9]);
-        } else {
-          // SQLite: ON CONFLICT
-          await db.run(`
-            INSERT INTO game_handicap_h2h (game_id, from_player_id, to_player_id, front9_strokes, back9_strokes)
-            VALUES (?, ?, ?, ?, ?)
-            ON CONFLICT(game_id, from_player_id, to_player_id)
-            DO UPDATE SET front9_strokes = ?, back9_strokes = ?, updated_at = CURRENT_TIMESTAMP
-          `, [gameId, fromPlayerId, toPlayerId, front9, back9, front9, back9]);
-        }
-      }
-    }
-
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Update handicap matrix error:', error);
-    res.status(500).json({ error: 'Failed to update handicap matrix' });
   }
 });
 
