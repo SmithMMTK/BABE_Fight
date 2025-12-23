@@ -130,7 +130,7 @@ function GamePlay() {
 
       // Load H2H handicap matrix
       try {
-        const h2hResponse = await api.get(`/games/${gameId}/handicap-matrix`);
+        const h2hResponse = await api.getHandicapMatrix(gameId);
         const { handicapMatrix } = h2hResponse.data;
         const gameResponse = await api.getGame(gameId);
         const courseResponse = await api.getCourses();
@@ -140,6 +140,8 @@ function GamePlay() {
           console.log('No H2H matrix or course data found');
           return;
         }
+        
+        console.log('H2H Matrix from server:', handicapMatrix);
         
         // Convert H2H total strokes to per-hole allocation
         const strokeAlloc = {};
@@ -152,6 +154,8 @@ function GamePlay() {
             const front9Total = handicapMatrix[fromPlayerId][toPlayerId].front9 || 0;
             const back9Total = handicapMatrix[fromPlayerId][toPlayerId].back9 || 0;
             
+            console.log(`Player ${fromPlayerId} -> ${toPlayerId}: F9=${front9Total}, B9=${back9Total}`);
+            
             strokeAlloc[fromPlayerId][toPlayerId] = {
               front9: allocateStrokesFor9Holes(front9Total, front9Holes, turboValues),
               back9: allocateStrokesFor9Holes(back9Total, back9Holes, turboValues)
@@ -162,7 +166,7 @@ function GamePlay() {
         console.log('Converted H2H stroke allocation:', strokeAlloc);
         setH2hStrokeAllocation(strokeAlloc);
       } catch (err) {
-        console.warn('Failed to load H2H matrix:', err);
+        console.error('Failed to load H2H matrix:', err);
       }
 
       setLoading(false);
