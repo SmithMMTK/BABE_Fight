@@ -91,6 +91,31 @@ async function initializeDatabase() {
       );
     `);
 
+    await pool.request().query(`
+      IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='game_handicap_h2h' AND xtype='U')
+      CREATE TABLE game_handicap_h2h (
+        id INT IDENTITY(1,1) PRIMARY KEY,
+        game_id INT NOT NULL,
+        from_player_id INT NOT NULL,
+        to_player_id INT NOT NULL,
+        front9_strokes INT DEFAULT 0,
+        back9_strokes INT DEFAULT 0,
+        created_at DATETIME DEFAULT GETDATE(),
+        updated_at DATETIME DEFAULT GETDATE(),
+        FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE NO ACTION,
+        FOREIGN KEY (from_player_id) REFERENCES players(id) ON DELETE NO ACTION,
+        FOREIGN KEY (to_player_id) REFERENCES players(id) ON DELETE NO ACTION,
+        CONSTRAINT unique_handicap_pair UNIQUE(game_id, from_player_id, to_player_id)
+      );
+    `);
+
+    await pool.request().query(`
+      IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('players') AND name = 'handicap')
+      BEGIN
+        ALTER TABLE players ADD handicap INT DEFAULT 0;
+      END;
+    `);
+
     console.log('✅ Database schema initialized');
   } catch (error) {
     console.error('❌ Database initialization error:', error);
