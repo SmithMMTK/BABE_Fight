@@ -45,7 +45,17 @@ function GamePlay() {
   // Must be called before any conditional returns to maintain hook order
   const strokeAllocation = useMemo(() => {
     if (!course || !players || players.length === 0) return {};
-    return calculateStrokeAllocation(players, course.holes, turboValues);
+    
+    // Debug: Log player handicaps
+    console.log('Players for stroke allocation:', players.map(p => ({ 
+      id: p.id, 
+      username: p.username, 
+      handicap: p.handicap 
+    })));
+    
+    const allocation = calculateStrokeAllocation(players, course.holes, turboValues);
+    console.log('Stroke allocation calculated:', allocation);
+    return allocation;
   }, [players, course, turboValues]);
 
   useEffect(() => {

@@ -249,7 +249,7 @@ router.get('/:gameId', async (req, res) => {
     }
 
     const players = await db.all(
-      'SELECT id, username, role FROM players WHERE game_id = ? ORDER BY joined_at',
+      'SELECT id, username, role, handicap FROM players WHERE game_id = ? ORDER BY joined_at',
       [gameId]
     );
 
