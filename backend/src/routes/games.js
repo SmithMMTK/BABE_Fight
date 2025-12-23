@@ -99,42 +99,31 @@ router.post('/join', async (req, res) => {
       return res.status(404).json({ error: 'Game not found' });
     }
 
-    // Check if username already exists
+    // Security: Check if username exists in this game
+    // Users must know BOTH the PIN AND an existing player's exact name to join
     const existingPlayer = await db.get(
       'SELECT * FROM players WHERE game_id = ? AND username = ?',
       [game.id, username]
     );
 
-    // If player exists, return existing player data
-    if (existingPlayer) {
-      return res.json({
-        gameId: game.id,
-        playerId: existingPlayer.id,
-        hostPin: game.host_pin,
-        guestPin: game.guest_pin,
-        courseId: game.course_id,
-        courseName: game.course_name,
-        role: existingPlayer.role
+    // Reject if username doesn't match any existing player
+    // This prevents unauthorized access even with correct PIN
+    if (!existingPlayer) {
+      return res.status(403).json({ 
+        error: 'Player name not found',
+        message: 'Username does not match any existing player in this game. Please enter the exact name of an existing player.'
       });
     }
 
-    // Determine role
-    const role = (pin === game.host_pin) ? 'host' : 'player';
-
-    // Add player
-    const result = await db.run(`
-      INSERT INTO players (game_id, username, role)
-      VALUES (?, ?, ?)
-    `, [game.id, username, role]);
-
+    // Player exists - allow rejoin
     res.json({
       gameId: game.id,
-      playerId: result.lastID,
+      playerId: existingPlayer.id,
       hostPin: game.host_pin,
       guestPin: game.guest_pin,
       courseId: game.course_id,
       courseName: game.course_name,
-      role
+      role: existingPlayer.role
     });
   } catch (error) {
     console.error('Join game error:', error);

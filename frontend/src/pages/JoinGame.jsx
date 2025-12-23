@@ -41,6 +41,8 @@ function JoinGame() {
       console.error('Failed to join game:', err);
       if (err.response?.status === 404) {
         setError('ไม่พบเกมที่ใช้ PIN นี้');
+      } else if (err.response?.status === 403) {
+        setError('ชื่อผู้เล่นไม่ตรงกับผู้เล่นที่มีอยู่ในเกม กรุณาระบุชื่อที่ถูกต้อง');
       } else {
         setError('ไม่สามารถเข้าร่วมเกมได้ กรุณาลองใหม่อีกครั้ง');
       }
