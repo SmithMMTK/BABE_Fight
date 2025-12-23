@@ -1,6 +1,8 @@
 
 # Commit Logs
 
+*** Run test on local environment first then ask to deploy to Azure **
+
 ## ✅ Validate existing player name before join game (Completed - Dec 23, 2025)
 - **Security Feature**: Users must know BOTH PIN AND existing player's exact name to join
 - Prevents unauthorized access even with correct PIN
