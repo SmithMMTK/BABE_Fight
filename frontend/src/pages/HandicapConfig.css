@@ -1,0 +1,246 @@
+.handicap-config {
+  padding: 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.handicap-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--color-primary);
+}
+
+.handicap-header h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  color: var(--color-primary);
+}
+
+.btn-back {
+  background: transparent;
+  border: 1px solid var(--color-primary);
+  color: var(--color-primary);
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-back:hover {
+  background: var(--color-primary);
+  color: white;
+}
+
+.handicap-description {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.handicap-description p {
+  margin: 0.5rem 0;
+  color: var(--color-text);
+  font-size: 0.95rem;
+}
+
+.handicap-description .note {
+  color: #666;
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.handicap-tables {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.player-handicap-section {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.player-handicap-section .player-name {
+  margin: 0 0 1rem 0;
+  font-size: 1.25rem;
+  color: var(--color-primary);
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.handicap-grid {
+  overflow-x: auto;
+}
+
+.handicap-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 400px;
+}
+
+.handicap-table thead {
+  background: var(--color-primary);
+  color: white;
+}
+
+.handicap-table th {
+  padding: 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.handicap-table th.opponent-col {
+  width: 40%;
+}
+
+.handicap-table th.nine-col {
+  width: 30%;
+  text-align: center;
+}
+
+.handicap-table tbody tr {
+  border-bottom: 1px solid #f0f0f0;
+  transition: background 0.2s ease;
+}
+
+.handicap-table tbody tr:hover {
+  background: #f8f9fa;
+}
+
+.handicap-table td {
+  padding: 0.75rem;
+}
+
+.handicap-table td.opponent-name {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.handicap-input {
+  width: 80px;
+  padding: 0.5rem;
+  border: 2px solid #ddd;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.handicap-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(44, 62, 80, 0.1);
+}
+
+.handicap-input::-webkit-inner-spin-button,
+.handicap-input::-webkit-outer-spin-button {
+  opacity: 1;
+}
+
+.handicap-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 2px solid #f0f0f0;
+}
+
+.btn-save,
+.btn-cancel {
+  padding: 0.75rem 2rem;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  min-width: 120px;
+}
+
+.btn-save {
+  background: var(--color-primary);
+  color: white;
+}
+
+.btn-save:hover:not(:disabled) {
+  background: #34495e;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-cancel {
+  background: #e0e0e0;
+  color: var(--color-text);
+}
+
+.btn-cancel:hover:not(:disabled) {
+  background: #d0d0d0;
+}
+
+.btn-cancel:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.loading {
+  text-align: center;
+  padding: 3rem;
+  font-size: 1.25rem;
+  color: #666;
+}
+
+.error-message {
+  background: #fee;
+  color: #c33;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  border: 1px solid #fcc;
+}
+
+@media (max-width: 768px) {
+  .handicap-config {
+    padding: 0.5rem;
+  }
+
+  .handicap-header h1 {
+    font-size: 1.25rem;
+  }
+
+  .handicap-table th,
+  .handicap-table td {
+    padding: 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  .handicap-input {
+    width: 60px;
+    font-size: 0.9rem;
+  }
+
+  .handicap-actions {
+    flex-direction: column;
+  }
+
+  .btn-save,
+  .btn-cancel {
+    width: 100%;
+  }
+}

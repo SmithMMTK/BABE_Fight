@@ -26,7 +26,7 @@ Implement Head-to-Head (H2H) handicap calculation between players based on the a
 - [ ] Write tests for calculation logic
 
 ### Phase 3: Frontend Implementation
-- [ ] Add handicap input fields in CreateGame/JoinGame
+- [x] Add handicap input in CreateGame.jsx and JoinGame.jsx. Validate 0-54 range.
 - [ ] Display stroke allocation on GamePlay screen
 - [ ] Show adjusted scores with handicap
 - [ ] Add handicap info to score display

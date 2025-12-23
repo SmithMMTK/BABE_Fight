@@ -4,6 +4,7 @@ import Home from './pages/Home';
 import CreateGame from './pages/CreateGame';
 import JoinGame from './pages/JoinGame';
 import GamePlay from './pages/GamePlay';
+import HandicapConfig from './pages/HandicapConfig';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
           <Route path="/create" element={<CreateGame />} />
           <Route path="/join" element={<JoinGame />} />
           <Route path="/game/:gameId" element={<GamePlay />} />
+          <Route path="/game/:gameId/handicap" element={<HandicapConfig />} />
         </Routes>
       </SocketProvider>
     </Router>

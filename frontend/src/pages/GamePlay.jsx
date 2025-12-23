@@ -508,6 +508,16 @@ function GamePlay() {
                   className="hamburger-menu-item"
                   onClick={() => {
                     setShowHamburgerMenu(false);
+                    navigate(`/game/${gameId}/handicap`);
+                  }}
+                >
+                  <span className="menu-icon">⚖️</span>
+                  <span>ตั้งค่าแต้มต่อ H2H</span>
+                </button>
+                <button 
+                  className="hamburger-menu-item"
+                  onClick={() => {
+                    setShowHamburgerMenu(false);
                     setShowVersionModal(true);
                   }}
                 >

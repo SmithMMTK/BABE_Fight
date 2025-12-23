@@ -123,6 +123,23 @@ async function initializeSQLSchema() {
     );
   `);
 
+  await pool.request().query(`
+    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='game_handicap_h2h' AND xtype='U')
+    CREATE TABLE game_handicap_h2h (
+      id INT IDENTITY(1,1) PRIMARY KEY,
+      game_id INT NOT NULL,
+      from_player_id INT NOT NULL,
+      to_player_id INT NOT NULL,
+      front9_strokes INT DEFAULT 0,
+      back9_strokes INT DEFAULT 0,
+      updated_at DATETIME DEFAULT GETDATE(),
+      FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE,
+      FOREIGN KEY (from_player_id) REFERENCES players(id) ON DELETE CASCADE,
+      FOREIGN KEY (to_player_id) REFERENCES players(id) ON DELETE NO ACTION,
+      CONSTRAINT unique_game_player_pair UNIQUE(game_id, from_player_id, to_player_id)
+    );
+  `);
+
   console.log('✅ SQL Server schema initialized');
 }
 
@@ -168,6 +185,20 @@ function initializeSQLiteSchema() {
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE,
       UNIQUE(game_id, hole_number)
+    );
+
+    CREATE TABLE IF NOT EXISTS game_handicap_h2h (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      game_id INTEGER NOT NULL,
+      from_player_id INTEGER NOT NULL,
+      to_player_id INTEGER NOT NULL,
+      front9_strokes INTEGER DEFAULT 0,
+      back9_strokes INTEGER DEFAULT 0,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE,
+      FOREIGN KEY (from_player_id) REFERENCES players(id) ON DELETE CASCADE,
+      FOREIGN KEY (to_player_id) REFERENCES players(id) ON DELETE CASCADE,
+      UNIQUE(game_id, from_player_id, to_player_id)
     );
   `);
 
