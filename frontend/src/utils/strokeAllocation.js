@@ -56,6 +56,10 @@ export function allocateStrokesFor9Holes(strokes, holes, turboValues = {}) {
     .sort((a, b) => a.hc - b.hc);
 
   const sortedHoles = [...par45Holes, ...par3Holes];
+  
+  console.log(`🎯 Allocating ${strokes} strokes:`);
+  console.log('Par 4/5 holes (sorted by HC):', par45Holes.map(h => `H${h.hole}(HC${h.hc})`).join(', '));
+  console.log('Par 3 holes (sorted by HC):', par3Holes.map(h => `H${h.hole}(HC${h.hc})`).join(', '));
 
   const allocation = {};
   let remainingStrokes = strokes;
@@ -66,6 +70,8 @@ export function allocateStrokesFor9Holes(strokes, holes, turboValues = {}) {
     allocation[hole.hole] = 1;
     remainingStrokes--;
   }
+  
+  console.log('After 1st pass:', allocation, `(${remainingStrokes} remaining)`);
 
   // Second pass: Add 2nd stroke to holes (max 2 strokes per hole)
   if (remainingStrokes > 0) {
@@ -87,6 +93,8 @@ export function allocateStrokesFor9Holes(strokes, holes, turboValues = {}) {
       }
     }
   }
+  
+  console.log('Final allocation:', allocation);
 
   return allocation;
 }
@@ -142,21 +150,25 @@ export function getStrokeDisplay(strokeAllocation, viewPlayerId, targetPlayerId,
   // Check strokes received by viewPlayer from targetPlayer
   const receivingStrokes = strokeAllocation[targetPlayerId]?.[viewPlayerId]?.[nine]?.[holeNumber] || 0;
 
+  // If viewPlayer gives strokes to targetPlayer, show + in target's column (they get advantage)
   if (givingStrokes > 0) {
     return {
-      display: givingStrokes === 1 ? '*' : '**',
-      color: 'red',
-      count: -givingStrokes
+      display: givingStrokes === 1 ? '+' : '++',
+      color: 'green',
+      count: givingStrokes,
+      position: 'top-right'
     };
   }
 
+  // If viewPlayer receives strokes from targetPlayer, show - in target's column (they give away advantage)
   if (receivingStrokes > 0) {
     return {
-      display: receivingStrokes === 1 ? '*' : '**',
-      color: 'green',
-      count: receivingStrokes
+      display: receivingStrokes === 1 ? '-' : '--',
+      color: 'red',
+      count: -receivingStrokes,
+      position: 'bottom-right'
     };
   }
 
-  return { display: '', color: '', count: 0 };
+  return { display: '', color: '', count: 0, position: 'top-right' };
 }

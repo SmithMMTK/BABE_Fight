@@ -748,26 +748,38 @@ function GamePlay() {
                   {sortedPlayers.map((player, index) => {
                     const handicapDisplay = getStrokeDisplay(strokeAllocation, effectiveViewPlayerId, player.id, hole.hole);
                     console.log(`Hole ${hole.hole}, Player ${player.username}:`, handicapDisplay);
+                    
+                    // Determine numeric display with color (skip turbo holes)
+                    const isTurboHole = turboValues[hole.hole] > 1;
+                    let strokeIndicator = null;
+                    if (!isTurboHole && handicapDisplay.count !== 0) {
+                      const absCount = Math.abs(handicapDisplay.count);
+                      strokeIndicator = {
+                        count: absCount,
+                        color: handicapDisplay.count > 0 ? '#4caf50' : '#f44336' // green for receiving, red for giving
+                      };
+                    }
+                    
                     return (
                       <td key={player.id} className={`score-cell-vertical ${index === 0 ? 'focus-player' : ''}`}>
                         <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'visible' }}>
-                          {handicapDisplay.display && (
+                          {/* Numeric handicap indicator */}
+                          {strokeIndicator && (
                             <div 
                               className="handicap-indicator"
                               style={{
                                 position: 'absolute',
                                 top: '2px',
                                 right: '2px',
-                                fontSize: '1rem',
+                                fontSize: '0.875rem',
                                 fontWeight: 'bold',
-                                color: handicapDisplay.color,
-                                zIndex: 100,
+                                color: strokeIndicator.color,
+                                zIndex: 2,
                                 lineHeight: 1,
-                                pointerEvents: 'none',
-                                textShadow: '0 0 3px white, 0 0 3px white'
+                                pointerEvents: 'none'
                               }}
                             >
-                              {handicapDisplay.display}
+                              {strokeIndicator.count}
                             </div>
                           )}
                           {scores[player.id]?.[hole.hole] ? (
@@ -912,26 +924,38 @@ function GamePlay() {
                   </td>
                   {sortedPlayers.map((player, index) => {
                     const handicapDisplay = getStrokeDisplay(strokeAllocation, effectiveViewPlayerId, player.id, hole.hole);
+                    
+                    // Determine numeric display with color (skip turbo holes)
+                    const isTurboHole = turboValues[hole.hole] > 1;
+                    let strokeIndicator = null;
+                    if (!isTurboHole && handicapDisplay.count !== 0) {
+                      const absCount = Math.abs(handicapDisplay.count);
+                      strokeIndicator = {
+                        count: absCount,
+                        color: handicapDisplay.count > 0 ? '#4caf50' : '#f44336' // green for receiving, red for giving
+                      };
+                    }
+                    
                     return (
                       <td key={player.id} className={`score-cell-vertical ${index === 0 ? 'focus-player' : ''}`}>
                         <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'visible' }}>
-                          {handicapDisplay.display && (
+                          {/* Numeric handicap indicator */}
+                          {strokeIndicator && (
                             <div 
                               className="handicap-indicator"
                               style={{
                                 position: 'absolute',
                                 top: '2px',
                                 right: '2px',
-                                fontSize: '1rem',
+                                fontSize: '0.875rem',
                                 fontWeight: 'bold',
-                                color: handicapDisplay.color,
-                                zIndex: 100,
+                                color: strokeIndicator.color,
+                                zIndex: 2,
                                 lineHeight: 1,
-                                pointerEvents: 'none',
-                                textShadow: '0 0 3px white, 0 0 3px white'
+                                pointerEvents: 'none'
                               }}
                             >
-                              {handicapDisplay.display}
+                              {strokeIndicator.count}
                             </div>
                           )}
                           {scores[player.id]?.[hole.hole] ? (
