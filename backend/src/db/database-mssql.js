@@ -38,17 +38,6 @@ async function initializeDatabase() {
   try {
     const pool = await getPool();
     
-    // Drop game_handicap_h2h if exists to recreate with correct constraints
-    try {
-      await pool.request().query(`
-        IF EXISTS (SELECT * FROM sysobjects WHERE name='game_handicap_h2h' AND xtype='U')
-        DROP TABLE game_handicap_h2h;
-      `);
-      console.log('Dropped existing game_handicap_h2h table');
-    } catch (err) {
-      console.log('Note: game_handicap_h2h table does not exist yet');
-    }
-    
     // Create tables if they don't exist
     await pool.request().query(`
       IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='games' AND xtype='U')

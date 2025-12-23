@@ -1,5 +1,5 @@
 import express from 'express';
-import db from '../db/database.js';
+import db from '../db/database-mssql.js';
 
 const router = express.Router();
 
@@ -12,29 +12,16 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Check if using SQL Server or SQLite
-    const isSQL = process.env.DB_TYPE === 'mssql';
-    
-    if (isSQL) {
-      // SQL Server: MERGE statement
-      await db.run(`
-        MERGE INTO scores AS target
-        USING (SELECT ? AS player_id, ? AS hole_number, ? AS score) AS source
-        ON target.player_id = source.player_id AND target.hole_number = source.hole_number
-        WHEN MATCHED THEN
-          UPDATE SET score = source.score, updated_at = GETDATE()
-        WHEN NOT MATCHED THEN
-          INSERT (player_id, hole_number, score) VALUES (source.player_id, source.hole_number, source.score);
-      `, [playerId, holeNumber, score]);
-    } else {
-      // SQLite: ON CONFLICT
-      await db.run(`
-        INSERT INTO scores (player_id, hole_number, score)
-        VALUES (?, ?, ?)
-        ON CONFLICT(player_id, hole_number) 
-        DO UPDATE SET score = ?, updated_at = CURRENT_TIMESTAMP
-      `, [playerId, holeNumber, score, score]);
-    }
+    // SQL Server: MERGE statement
+    await db.run(`
+      MERGE INTO scores AS target
+      USING (SELECT ? AS player_id, ? AS hole_number, ? AS score) AS source
+      ON target.player_id = source.player_id AND target.hole_number = source.hole_number
+      WHEN MATCHED THEN
+        UPDATE SET score = source.score, updated_at = GETDATE()
+      WHEN NOT MATCHED THEN
+        INSERT (player_id, hole_number, score) VALUES (source.player_id, source.hole_number, source.score);
+    `, [playerId, holeNumber, score]);
 
     res.json({ success: true });
   } catch (error) {

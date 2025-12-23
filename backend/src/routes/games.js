@@ -1,5 +1,5 @@
 import express from 'express';
-import db from '../db/database.js';
+import db from '../db/database-mssql.js';
 import { generateUniquePINs } from '../utils/pinGenerator.js';
 import { calculateStrokeAllocation } from '../utils/strokeAllocation.js';
 import axios from 'axios';
@@ -211,37 +211,23 @@ router.post('/:gameId/handicap-matrix', async (req, res) => {
       return res.status(404).json({ error: 'Game not found' });
     }
 
-    // Check if using SQL Server or SQLite
-    const isSQL = process.env.DB_TYPE === 'mssql';
-
-    // Update each player pair
+    // Update each player pair using SQL Server MERGE
     for (const fromPlayerId in handicapMatrix) {
       for (const toPlayerId in handicapMatrix[fromPlayerId]) {
         const { front9, back9 } = handicapMatrix[fromPlayerId][toPlayerId];
         
-        if (isSQL) {
-          // SQL Server: MERGE
-          await db.run(`
-            MERGE INTO game_handicap_h2h AS target
-            USING (SELECT ? AS game_id, ? AS from_player_id, ? AS to_player_id, ? AS front9_strokes, ? AS back9_strokes) AS source
-            ON target.game_id = source.game_id 
-              AND target.from_player_id = source.from_player_id 
-              AND target.to_player_id = source.to_player_id
-            WHEN MATCHED THEN
-              UPDATE SET front9_strokes = source.front9_strokes, back9_strokes = source.back9_strokes, updated_at = GETDATE()
-            WHEN NOT MATCHED THEN
-              INSERT (game_id, from_player_id, to_player_id, front9_strokes, back9_strokes)
-              VALUES (source.game_id, source.from_player_id, source.to_player_id, source.front9_strokes, source.back9_strokes);
-          `, [gameId, fromPlayerId, toPlayerId, front9, back9]);
-        } else {
-          // SQLite: ON CONFLICT
-          await db.run(`
-            INSERT INTO game_handicap_h2h (game_id, from_player_id, to_player_id, front9_strokes, back9_strokes)
-            VALUES (?, ?, ?, ?, ?)
-            ON CONFLICT(game_id, from_player_id, to_player_id)
-            DO UPDATE SET front9_strokes = ?, back9_strokes = ?, updated_at = CURRENT_TIMESTAMP
-          `, [gameId, fromPlayerId, toPlayerId, front9, back9, front9, back9]);
-        }
+        await db.run(`
+          MERGE INTO game_handicap_h2h AS target
+          USING (SELECT ? AS game_id, ? AS from_player_id, ? AS to_player_id, ? AS front9_strokes, ? AS back9_strokes) AS source
+          ON target.game_id = source.game_id 
+            AND target.from_player_id = source.from_player_id 
+            AND target.to_player_id = source.to_player_id
+          WHEN MATCHED THEN
+            UPDATE SET front9_strokes = source.front9_strokes, back9_strokes = source.back9_strokes, updated_at = GETDATE()
+          WHEN NOT MATCHED THEN
+            INSERT (game_id, from_player_id, to_player_id, front9_strokes, back9_strokes)
+            VALUES (source.game_id, source.from_player_id, source.to_player_id, source.front9_strokes, source.back9_strokes);
+        `, [gameId, fromPlayerId, toPlayerId, front9, back9]);
       }
     }
 
@@ -407,14 +393,6 @@ router.post('/:gameId/turbo', async (req, res) => {
         WHEN NOT MATCHED THEN
           INSERT (game_id, hole_number, multiplier) VALUES (source.game_id, source.hole_number, source.multiplier);
       `, [gameId, holeNumber, multiplier]);
-    } else {
-      // SQLite: ON CONFLICT
-      await db.run(`
-        INSERT INTO game_turbo (game_id, hole_number, multiplier)
-        VALUES (?, ?, ?)
-        ON CONFLICT(game_id, hole_number) 
-        DO UPDATE SET multiplier = ?, updated_at = CURRENT_TIMESTAMP
-      `, [gameId, holeNumber, multiplier, multiplier]);
     }
     
     res.json({ success: true });
