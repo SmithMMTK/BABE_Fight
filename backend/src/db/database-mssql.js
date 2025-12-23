@@ -113,9 +113,6 @@ async function initializeDatabase() {
         back9_strokes INT DEFAULT 0,
         created_at DATETIME DEFAULT GETDATE(),
         updated_at DATETIME DEFAULT GETDATE(),
-        FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE NO ACTION,
-        FOREIGN KEY (from_player_id) REFERENCES players(id) ON DELETE NO ACTION,
-        FOREIGN KEY (to_player_id) REFERENCES players(id) ON DELETE NO ACTION,
         CONSTRAINT unique_handicap_pair UNIQUE(game_id, from_player_id, to_player_id)
       );
     `);
