@@ -21,7 +21,7 @@ Multi-player real-time golf scorecard application with WebSocket synchronization
 
 ```bash
 # Run the project
-./run-local.sh
+./scripts/run-local.sh
 
 # Access application
 Frontend: http://localhost:5173
@@ -30,39 +30,66 @@ Backend: http://localhost:8080
 
 ## Production Deployment
 
-See [AZURE_DEPLOYMENT.md](./AZURE_DEPLOYMENT.md) for complete deployment guide.
+See [docs/AZURE_ARCHITECTURE.md](./docs/AZURE_ARCHITECTURE.md) for complete architecture documentation.
 
-### Quick Deploy to Azure
+### Deploy to Azure Container Apps
 
 ```bash
-# Build frontend
-npm run build
+# Initial deployment (first time)
+./scripts/deploy-container-apps.sh
 
-# Deploy
-npm start
+# Update after code changes
+./scripts/update-app.sh
 ```
+
+See [scripts/README.md](./scripts/README.md) for all available deployment scripts.
 
 ## Project Structure
 
 ```
-├── backend/
+├── backend/                   # Node.js backend server
 │   ├── src/
 │   │   ├── server.js          # Express + Socket.IO server
-│   │   ├── routes/            # API routes
+│   │   ├── routes/            # API routes (games, scores)
 │   │   ├── sockets/           # WebSocket handlers
-│   │   └── db/                # SQLite database
-│   └── data/                  # Database files
-├── frontend/
+│   │   ├── middleware/        # Express middleware
+│   │   ├── utils/             # Utilities (PIN generator)
+│   │   └── db/                # SQLite database layer
+│   └── data/                  # SQLite database files (persistent)
+│
+├── frontend/                  # React frontend
 │   ├── src/
-│   │   ├── pages/             # React pages
-│   │   ├── components/        # React components
-│   │   ├── services/          # API service
-│   │   └── context/           # Socket context
-│   └── dist/                  # Production build
-├── Resources/                 # Course data & configs
-├── startup.sh                 # Azure startup script
-├── web.config                 # IIS configuration
-└── AZURE_DEPLOYMENT.md        # Deployment guide
+│   │   ├── pages/             # React pages (Home, CreateGame, etc.)
+│   │   ├── components/        # React components (PlayersMenu)
+│   │   ├── services/          # API service layer
+│   │   ├── context/           # Socket.IO context
+│   │   └── styles/            # CSS styles
+│   ├── public/                # Static assets
+│   └── dist/                  # Production build output
+│
+├── docs/                      # 📚 Documentation
+│   ├── README.md              # Documentation index
+│   ├── AZURE_ARCHITECTURE.md  # Azure deployment architecture
+│   ├── CONTAINER_APPS_DEPLOY.md  # Deployment guide
+│   ├── backlogs.md            # Feature backlog
+│   ├── commit_log.md          # Development history
+│   └── setup/Instructions/    # Implementation guides
+│
+├── scripts/                   # 🔧 Deployment & utility scripts
+│   ├── README.md              # Scripts documentation
+│   ├── deploy-container-apps.sh  # Azure Container Apps deployment
+│   ├── update-app.sh          # Update deployed app
+│   ├── create-azure-sql.sh    # Azure SQL setup
+│   ├── run-local.sh           # Local development
+│   └── setup-docker-buildx.sh # Docker configuration
+│
+├── Resources/                 # 📁 Game data
+│   ├── courses.json           # Golf course definitions
+│   └── turbo-default.json     # Default turbo configuration
+│
+├── Dockerfile                 # Multi-stage Docker build
+├── package.json               # Root dependencies
+└── README.md                  # This file
 ```
 
 ## Environment Variables
