@@ -27,7 +27,7 @@ function VersionInfo() {
         onClick={() => setShowDetails(!showDetails)}
         title="Click for details"
       >
-        v{version.version}
+        {version.version.startsWith('v') ? version.version : `v${version.version}`}
       </div>
       
       {showDetails && (
