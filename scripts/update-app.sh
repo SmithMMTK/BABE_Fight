@@ -48,15 +48,20 @@ ACR_LOGIN_SERVER=$(az acr show \
 # Build new image with version tag
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 VERSION_TAG="v$TIMESTAMP"
+GIT_COMMIT=$(git rev-parse HEAD)
 
 echo -e "${GREEN}Step 2: Building new Docker image (AMD64)...${NC}"
 echo "Tags: latest, $VERSION_TAG"
+echo "Git Commit: ${GIT_COMMIT:0:7}"
 
 # Change to project root for docker build
 cd "$PROJECT_ROOT"
 
 docker buildx build \
   --platform linux/amd64 \
+  --build-arg APP_VERSION=$VERSION_TAG \
+  --build-arg BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
+  --build-arg GIT_COMMIT=$GIT_COMMIT \
   -t $ACR_LOGIN_SERVER/babe-fight:latest \
   -t $ACR_LOGIN_SERVER/babe-fight:$VERSION_TAG \
   --load .

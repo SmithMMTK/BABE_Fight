@@ -36,5 +36,8 @@ export const api = {
 
   // Turbo
   getTurboValues: (gameId) => axios.get(`${API_URL}/games/${gameId}/turbo`),
-  updateTurboValue: (gameId, data) => axios.post(`${API_URL}/games/${gameId}/turbo`, data)
+  updateTurboValue: (gameId, data) => axios.post(`${API_URL}/games/${gameId}/turbo`, data),
+  
+  // Version
+  getVersion: () => axios.get(`${API_URL}/version`)
 };

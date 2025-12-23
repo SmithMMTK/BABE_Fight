@@ -11,6 +11,16 @@ RUN npm run build
 # Production stage
 FROM node:20-alpine
 
+# Build arguments for version tracking
+ARG APP_VERSION=dev
+ARG BUILD_TIME
+ARG GIT_COMMIT=unknown
+
+# Set as environment variables
+ENV APP_VERSION=$APP_VERSION \
+    BUILD_TIME=$BUILD_TIME \
+    GIT_COMMIT=$GIT_COMMIT
+
 WORKDIR /app
 
 # Copy backend files

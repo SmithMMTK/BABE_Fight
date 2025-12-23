@@ -6,6 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import gamesRouter from './routes/games.js';
 import scoresRouter from './routes/scores.js';
+import versionRouter from './routes/version.js';
 import { setupGameSocket } from './sockets/gameSocket.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -28,6 +29,7 @@ app.use(express.json());
 // API Routes
 app.use('/api/games', gamesRouter);
 app.use('/api/scores', scoresRouter);
+app.use('/api/version', versionRouter);
 
 // Health check
 app.get('/health', (req, res) => {
