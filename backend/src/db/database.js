@@ -84,10 +84,17 @@ async function initializeSQLSchema() {
       game_id INT NOT NULL,
       username NVARCHAR(255) NOT NULL,
       role NVARCHAR(10) CHECK(role IN ('host', 'player')) NOT NULL,
+      handicap INT DEFAULT 0,
       joined_at DATETIME DEFAULT GETDATE(),
       FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE,
       CONSTRAINT unique_game_username UNIQUE(game_id, username)
     );
+  `);
+
+  // Add handicap column if it doesn't exist (migration)
+  await pool.request().query(`
+    IF NOT EXISTS (SELECT * FROM syscolumns WHERE id=OBJECT_ID('players') AND name='handicap')
+    ALTER TABLE players ADD handicap INT DEFAULT 0;
   `);
 
   await pool.request().query(`
@@ -137,6 +144,7 @@ function initializeSQLiteSchema() {
       game_id INTEGER NOT NULL,
       username TEXT NOT NULL,
       role TEXT CHECK(role IN ('host', 'player')) NOT NULL,
+      handicap INTEGER DEFAULT 0,
       joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE,
       UNIQUE(game_id, username)
@@ -162,6 +170,17 @@ function initializeSQLiteSchema() {
       UNIQUE(game_id, hole_number)
     );
   `);
+
+  // Add handicap column if it doesn't exist (migration for existing databases)
+  try {
+    sqliteDb.exec(`ALTER TABLE players ADD COLUMN handicap INTEGER DEFAULT 0;`);
+  } catch (err) {
+    // Column already exists, ignore error
+    if (!err.message.includes('duplicate column name')) {
+      console.error('Migration error:', err);
+    }
+  }
+
   console.log('✅ SQLite schema initialized');
 }
 

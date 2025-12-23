@@ -1,6 +1,7 @@
 import express from 'express';
 import db from '../db/database.js';
 import { generateUniquePINs } from '../utils/pinGenerator.js';
+import { calculateStrokeAllocation } from '../utils/strokeAllocation.js';
 import axios from 'axios';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -34,7 +35,7 @@ function enhanceCourseData(course) {
 // Create new game
 router.post('/create', async (req, res) => {
   try {
-    const { courseId, courseName, hostUsername } = req.body;
+    const { courseId, courseName, hostUsername, hostHandicap } = req.body;
 
     if (!courseId || !courseName || !hostUsername) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -61,11 +62,12 @@ router.post('/create', async (req, res) => {
       throw new Error('Failed to get game ID from insert');
     }
 
-    // Add host as player
+    // Add host as player with handicap
+    const handicap = hostHandicap !== undefined ? hostHandicap : 0;
     await db.run(`
-      INSERT INTO players (game_id, username, role)
-      VALUES (?, ?, 'host')
-    `, [gameId, hostUsername]);
+      INSERT INTO players (game_id, username, role, handicap)
+      VALUES (?, ?, 'host', ?)
+    `, [gameId, hostUsername, handicap]);
 
     res.json({
       gameId,
@@ -171,7 +173,7 @@ router.get('/courses/list', async (req, res) => {
 router.post('/:gameId/players', async (req, res) => {
   try {
     const { gameId } = req.params;
-    const { username, role } = req.body;
+    const { username, role, handicap } = req.body;
 
     if (!username || !role) {
       return res.status(400).json({ error: 'Missing username or role' });
@@ -187,13 +189,14 @@ router.post('/:gameId/players', async (req, res) => {
       return res.status(400).json({ error: 'Username already exists' });
     }
 
+    const playerHandicap = handicap !== undefined ? handicap : 0;
     const result = await db.run(`
-      INSERT INTO players (game_id, username, role)
-      VALUES (?, ?, ?)
-    `, [gameId, username, role]);
+      INSERT INTO players (game_id, username, role, handicap)
+      VALUES (?, ?, ?, ?)
+    `, [gameId, username, role, playerHandicap]);
 
     const newPlayer = await db.get(
-      'SELECT id, username, role FROM players WHERE id = ?',
+      'SELECT id, username, role, handicap FROM players WHERE id = ?',
       [result.lastID]
     );
 
@@ -313,6 +316,103 @@ router.post('/:gameId/turbo', async (req, res) => {
   } catch (error) {
     console.error('Update turbo error:', error);
     res.status(500).json({ error: 'Failed to update turbo value' });
+  }
+});
+
+// Update player handicap
+router.post('/:gameId/players/:playerId/handicap', async (req, res) => {
+  try {
+    const { gameId, playerId } = req.params;
+    const { handicap } = req.body;
+
+    if (handicap === undefined || handicap === null) {
+      return res.status(400).json({ error: 'Missing handicap value' });
+    }
+
+    // Validate handicap range (0-54)
+    if (handicap < 0 || handicap > 54) {
+      return res.status(400).json({ error: 'Handicap must be between 0 and 54' });
+    }
+
+    // Verify player belongs to this game
+    const player = await db.get(
+      'SELECT * FROM players WHERE id = ? AND game_id = ?',
+      [playerId, gameId]
+    );
+
+    if (!player) {
+      return res.status(404).json({ error: 'Player not found in this game' });
+    }
+
+    // Update handicap
+    await db.run(
+      'UPDATE players SET handicap = ? WHERE id = ?',
+      [handicap, playerId]
+    );
+
+    res.json({ success: true, playerId, handicap });
+  } catch (error) {
+    console.error('Update handicap error:', error);
+    res.status(500).json({ error: 'Failed to update handicap' });
+  }
+});
+
+// Get handicap matrix and stroke allocation for a game
+router.get('/:gameId/handicap-matrix', async (req, res) => {
+  try {
+    const { gameId } = req.params;
+
+    // Get all players with handicaps
+    const players = await db.all(
+      'SELECT id, username, role, handicap FROM players WHERE game_id = ? ORDER BY joined_at',
+      [gameId]
+    );
+
+    if (!players || players.length === 0) {
+      return res.json({ players: [], strokeAllocation: {} });
+    }
+
+    // Get game and course info
+    const game = await db.get('SELECT course_id FROM games WHERE id = ?', [gameId]);
+    if (!game) {
+      return res.status(404).json({ error: 'Game not found' });
+    }
+
+    // Load course data
+    const coursesPath = join(__dirname, '../../../Resources/courses.json');
+    const coursesData = JSON.parse(fs.readFileSync(coursesPath, 'utf8'));
+    const course = coursesData.find(c => c.id === game.course_id);
+
+    if (!course) {
+      return res.status(404).json({ error: 'Course not found' });
+    }
+
+    // Get turbo values
+    const turboRows = await db.all(
+      'SELECT hole_number, multiplier FROM game_turbo WHERE game_id = ?',
+      [gameId]
+    );
+    const turboMap = {};
+    turboRows.forEach(row => {
+      turboMap[row.hole_number] = row.multiplier;
+    });
+
+    // Enhance holes with turbo values
+    const courseHoles = course.holes.map(hole => ({
+      ...hole,
+      turbo: turboMap[hole.hole] || turboConfig[hole.hole] || 1
+    }));
+
+    // Calculate stroke allocation
+    const strokeAllocation = calculateStrokeAllocation(players, courseHoles);
+
+    res.json({
+      players: players.map(p => ({ id: p.id, username: p.username, handicap: p.handicap })),
+      strokeAllocation
+    });
+  } catch (error) {
+    console.error('Get handicap matrix error:', error);
+    res.status(500).json({ error: 'Failed to get handicap matrix' });
   }
 });
 

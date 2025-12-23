@@ -13,16 +13,16 @@ Implement Head-to-Head (H2H) handicap calculation between players based on the a
 ### Phase 1: Planning & Analysis
 - [x] Created feature branch `feature/h2h-handicap`
 - [x] Differentiate focus player (the left player) by color
-- [ ] Review handicap stroke allocation algorithm
+- [x] Review handicap stroke allocation algorithm
 - [ ] Define data model for player handicaps
 - [ ] Design UI/UX for handicap input and display
 - [ ] Plan backend API endpoints
 
 ### Phase 2: Backend Implementation
-- [ ] Add handicap field to player/game data model
-- [ ] Implement H2H handicap calculation logic
-- [ ] Create API endpoints for handicap operations
-- [ ] Add validation for handicap values
+- [x] Add handicap field to player/game data model
+- [x] Implement H2H handicap calculation logic
+- [x] Create API endpoints for handicap operations
+- [x] Add validation for handicap values
 - [ ] Write tests for calculation logic
 
 ### Phase 3: Frontend Implementation
