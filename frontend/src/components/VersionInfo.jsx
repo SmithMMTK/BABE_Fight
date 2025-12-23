@@ -4,7 +4,6 @@ import './VersionInfo.css';
 
 function VersionInfo() {
   const [version, setVersion] = useState(null);
-  const [showDetails, setShowDetails] = useState(false);
 
   useEffect(() => {
     const fetchVersion = async () => {
@@ -22,22 +21,9 @@ function VersionInfo() {
 
   return (
     <div className="version-info">
-      <div 
-        className="version-badge" 
-        onClick={() => setShowDetails(!showDetails)}
-        title="Click for details"
-      >
+      <div className="version-text">
         {version.version.startsWith('v') ? version.version : `v${version.version}`}
       </div>
-      
-      {showDetails && (
-        <div className="version-details">
-          <div><strong>Version:</strong> {version.version}</div>
-          <div><strong>Build Time:</strong> {new Date(version.buildTime).toLocaleString('th-TH')}</div>
-          <div><strong>Commit:</strong> {version.gitCommit.substring(0, 7)}</div>
-          <div><strong>Environment:</strong> {version.environment}</div>
-        </div>
-      )}
     </div>
   );
 }

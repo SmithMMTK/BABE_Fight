@@ -4,7 +4,6 @@ import Home from './pages/Home';
 import CreateGame from './pages/CreateGame';
 import JoinGame from './pages/JoinGame';
 import GamePlay from './pages/GamePlay';
-import VersionInfo from './components/VersionInfo';
 
 function App() {
   return (
@@ -16,7 +15,6 @@ function App() {
           <Route path="/join" element={<JoinGame />} />
           <Route path="/game/:gameId" element={<GamePlay />} />
         </Routes>
-        <VersionInfo />
       </SocketProvider>
     </Router>
   );

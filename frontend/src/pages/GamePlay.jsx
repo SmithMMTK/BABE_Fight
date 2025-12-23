@@ -20,6 +20,8 @@ function GamePlay() {
   const [currentPlayerId, setCurrentPlayerId] = useState(null);
   const [showPlayersMenu, setShowPlayersMenu] = useState(false);
   const [showHamburgerMenu, setShowHamburgerMenu] = useState(false);
+  const [showVersionModal, setShowVersionModal] = useState(false);
+  const [versionInfo, setVersionInfo] = useState(null);
   const [viewAsPlayerId, setViewAsPlayerId] = useState(null); // For HOST to view as another player
   const [turboValues, setTurboValues] = useState({}); // Track turbo multipliers for each hole
   const [showTurboDropdown, setShowTurboDropdown] = useState(null); // holeNumber
@@ -37,6 +39,19 @@ function GamePlay() {
 
   const sessionData = getSession();
   const { isHost, hostPin, guestPin, username } = sessionData || {};
+
+  useEffect(() => {
+    // Fetch version info
+    const fetchVersion = async () => {
+      try {
+        const response = await api.getVersion();
+        setVersionInfo(response.data);
+      } catch (err) {
+        console.error('Failed to fetch version:', err);
+      }
+    };
+    fetchVersion();
+  }, []);
 
   useEffect(() => {
     // Save session to localStorage when component mounts
@@ -490,12 +505,57 @@ function GamePlay() {
                   <span>จัดการผู้เล่น ({players.length})</span>
                 </button>
                 <button 
+                  className="hamburger-menu-item"
+                  onClick={() => {
+                    setShowHamburgerMenu(false);
+                    setShowVersionModal(true);
+                  }}
+                >
+                  <span className="menu-icon">ℹ️</span>
+                  <span>Version Info</span>
+                </button>
+                <button 
                   className="hamburger-menu-item danger"
                   onClick={handleLeaveGame}
                 >
                   <span className="menu-icon">🚪</span>
                   <span>ออกจากเกม</span>
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Version Info Modal */}
+        {showVersionModal && versionInfo && (
+          <div className="version-modal-overlay" onClick={() => setShowVersionModal(false)}>
+            <div className="version-modal-panel" onClick={(e) => e.stopPropagation()}>
+              <div className="version-modal-header">
+                <h3>Version Information</h3>
+                <button 
+                  className="btn-close-version"
+                  onClick={() => setShowVersionModal(false)}
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="version-modal-content">
+                <div className="version-item">
+                  <span className="version-label">Version:</span>
+                  <span className="version-value">{versionInfo.version}</span>
+                </div>
+                <div className="version-item">
+                  <span className="version-label">Build Time:</span>
+                  <span className="version-value">{new Date(versionInfo.buildTime).toLocaleString('th-TH')}</span>
+                </div>
+                <div className="version-item">
+                  <span className="version-label">Git Commit:</span>
+                  <span className="version-value">{versionInfo.gitCommit.substring(0, 7)}</span>
+                </div>
+                <div className="version-item">
+                  <span className="version-label">Environment:</span>
+                  <span className="version-value">{versionInfo.environment}</span>
+                </div>
               </div>
             </div>
           </div>
