@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 import { api } from '../services/api';
 import PlayersMenu from '../components/PlayersMenu';
+import { calculateStrokeAllocation, getStrokeDisplay } from '../utils/strokeAllocation';
 import './GamePlay.css';
 
 function GamePlay() {
@@ -424,6 +425,12 @@ function GamePlay() {
     return 0;
   });
 
+  // Calculate stroke allocation for H2H handicap
+  const strokeAllocation = useMemo(() => {
+    if (!course || !players || players.length === 0) return {};
+    return calculateStrokeAllocation(players, course.holes, turboValues);
+  }, [players, course, turboValues]);
+
   // Function to check if current user can edit a score
   const canEditScore = (playerId) => {
     if (isCurrentUserHost) return true; // HOST can edit all scores
@@ -655,39 +662,60 @@ function GamePlay() {
                       </div>
                     </div>
                   </td>
-                  {sortedPlayers.map((player, index) => (
-                    <td key={player.id} className={`score-cell-vertical ${index === 0 ? 'focus-player' : ''}`}>
-                      {scores[player.id]?.[hole.hole] ? (
-                        <div 
-                          className={`score-display ${getScoreClass(scores[player.id][hole.hole], hole.par)}`}
-                          onClick={() => canEditScore(player.id) && updateScore(player.id, hole.hole, null)}
-                          style={{cursor: canEditScore(player.id) ? 'pointer' : 'default', opacity: canEditScore(player.id) ? 1 : 0.7}}
-                        >
-                          {scores[player.id][hole.hole]}
+                  {sortedPlayers.map((player, index) => {
+                    const handicapDisplay = getStrokeDisplay(strokeAllocation, effectiveViewPlayerId, player.id, hole.hole);
+                    return (
+                      <td key={player.id} className={`score-cell-vertical ${index === 0 ? 'focus-player' : ''}`}>
+                        <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                          {handicapDisplay.display && (
+                            <div 
+                              style={{
+                                position: 'absolute',
+                                top: '2px',
+                                right: '2px',
+                                fontSize: '0.75rem',
+                                fontWeight: 'bold',
+                                color: handicapDisplay.color,
+                                zIndex: 1,
+                                lineHeight: 1
+                              }}
+                            >
+                              {handicapDisplay.display}
+                            </div>
+                          )}
+                          {scores[player.id]?.[hole.hole] ? (
+                            <div 
+                              className={`score-display ${getScoreClass(scores[player.id][hole.hole], hole.par)}`}
+                              onClick={() => canEditScore(player.id) && updateScore(player.id, hole.hole, null)}
+                              style={{cursor: canEditScore(player.id) ? 'pointer' : 'default', opacity: canEditScore(player.id) ? 1 : 0.7}}
+                            >
+                              {scores[player.id][hole.hole]}
+                            </div>
+                          ) : canEditScore(player.id) ? (
+                            <select
+                              className="score-select"
+                              value=""
+                              onChange={(e) => {
+                                const value = parseInt(e.target.value);
+                                if (value) {
+                                  updateScore(player.id, hole.hole, value);
+                                }
+                              }}
+                            >
+                              <option value="">-</option>
+                              {getScoreOptions(hole.par).map(option => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <div style={{fontSize: '1rem', color: '#999', textAlign: 'center', width: '100%'}}>-</div>
+                          )}
                         </div>
-                      ) : canEditScore(player.id) ? (
-                        <select
-                          className="score-select"
-                          value=""
-                          onChange={(e) => {
-                            const value = parseInt(e.target.value);
-                            if (value) {
-                              updateScore(player.id, hole.hole, value);
-                            }
-                          }}
-                        >
-                          <option value="">-</option>
-                          {getScoreOptions(hole.par).map(option => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <div style={{fontSize: '1rem', color: '#999', textAlign: 'center', width: '100%'}}>-</div>
-                      )}
-                    </td>
-                  ))}
+                      </td>
+                    );
+                  })}
                 </tr>
               ))}
               {/* Front 9 Total */}
@@ -766,39 +794,60 @@ function GamePlay() {
                       </div>
                     </div>
                   </td>
-                  {sortedPlayers.map((player, index) => (
-                    <td key={player.id} className={`score-cell-vertical ${index === 0 ? 'focus-player' : ''}`}>
-                      {scores[player.id]?.[hole.hole] ? (
-                        <div 
-                          className={`score-display ${getScoreClass(scores[player.id][hole.hole], hole.par)}`}
-                          onClick={() => canEditScore(player.id) && updateScore(player.id, hole.hole, null)}
-                          style={{cursor: canEditScore(player.id) ? 'pointer' : 'default', opacity: canEditScore(player.id) ? 1 : 0.7}}
-                        >
-                          {scores[player.id][hole.hole]}
+                  {sortedPlayers.map((player, index) => {
+                    const handicapDisplay = getStrokeDisplay(strokeAllocation, effectiveViewPlayerId, player.id, hole.hole);
+                    return (
+                      <td key={player.id} className={`score-cell-vertical ${index === 0 ? 'focus-player' : ''}`}>
+                        <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                          {handicapDisplay.display && (
+                            <div 
+                              style={{
+                                position: 'absolute',
+                                top: '2px',
+                                right: '2px',
+                                fontSize: '0.75rem',
+                                fontWeight: 'bold',
+                                color: handicapDisplay.color,
+                                zIndex: 1,
+                                lineHeight: 1
+                              }}
+                            >
+                              {handicapDisplay.display}
+                            </div>
+                          )}
+                          {scores[player.id]?.[hole.hole] ? (
+                            <div 
+                              className={`score-display ${getScoreClass(scores[player.id][hole.hole], hole.par)}`}
+                              onClick={() => canEditScore(player.id) && updateScore(player.id, hole.hole, null)}
+                              style={{cursor: canEditScore(player.id) ? 'pointer' : 'default', opacity: canEditScore(player.id) ? 1 : 0.7}}
+                            >
+                              {scores[player.id][hole.hole]}
+                            </div>
+                          ) : canEditScore(player.id) ? (
+                            <select
+                              className="score-select"
+                              value=""
+                              onChange={(e) => {
+                                const value = parseInt(e.target.value);
+                                if (value) {
+                                  updateScore(player.id, hole.hole, value);
+                                }
+                              }}
+                            >
+                              <option value="">-</option>
+                              {getScoreOptions(hole.par).map(option => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <div style={{fontSize: '1rem', color: '#999', textAlign: 'center', width: '100%'}}>-</div>
+                          )}
                         </div>
-                      ) : canEditScore(player.id) ? (
-                        <select
-                          className="score-select"
-                          value=""
-                          onChange={(e) => {
-                            const value = parseInt(e.target.value);
-                            if (value) {
-                              updateScore(player.id, hole.hole, value);
-                            }
-                          }}
-                        >
-                          <option value="">-</option>
-                          {getScoreOptions(hole.par).map(option => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <div style={{fontSize: '1rem', color: '#999', textAlign: 'center', width: '100%'}}>-</div>
-                      )}
-                    </td>
-                  ))}
+                      </td>
+                    );
+                  })}
                 </tr>
               ))}
               {/* Back 9 Total */}
