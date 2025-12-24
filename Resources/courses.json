@@ -120,7 +120,6 @@
       { "hole": 18, "par": 5, "hc": 8 }
     ]
   },
-
   {
     "id": "lam_luk_ka_ac",
     "name": "Lam Luk Ka Country Club (A-C)",
@@ -145,7 +144,6 @@
       { "hole": 18, "par": 4, "hc": 1 }
     ]
   },
-
   {
     "id": "lam_luk_ka_ad",
     "name": "Lam Luk Ka Country Club (A-D)",
@@ -167,6 +165,78 @@
       { "hole": 15, "par": 4, "hc": 8 },
       { "hole": 16, "par": 3, "hc": 12 },
       { "hole": 17, "par": 5, "hc": 16 },
+      { "hole": 18, "par": 4, "hc": 2 }
+    ]
+  },
+  {
+    "id": "lam_luk_ka_bc",
+    "name": "Lam Luk Ka Country Club (B-C)",
+    "holes": [
+      { "hole": 1,  "par": 4, "hc": 16 },
+      { "hole": 2,  "par": 5, "hc": 12 },
+      { "hole": 3,  "par": 3, "hc": 18 },
+      { "hole": 4,  "par": 4, "hc": 2 },
+      { "hole": 5,  "par": 4, "hc": 6 },
+      { "hole": 6,  "par": 4, "hc": 10 },
+      { "hole": 7,  "par": 3, "hc": 14 },
+      { "hole": 8,  "par": 4, "hc": 4 },
+      { "hole": 9,  "par": 5, "hc": 8 },
+      { "hole": 10, "par": 4, "hc": 15 },
+      { "hole": 11, "par": 5, "hc": 3 },
+      { "hole": 12, "par": 3, "hc": 17 },
+      { "hole": 13, "par": 4, "hc": 9 },
+      { "hole": 14, "par": 4, "hc": 5 },
+      { "hole": 15, "par": 4, "hc": 11 },
+      { "hole": 16, "par": 5, "hc": 7 },
+      { "hole": 17, "par": 3, "hc": 13 },
+      { "hole": 18, "par": 4, "hc": 1 }
+    ]
+  },
+  {
+    "id": "lam_luk_ka_bd",
+    "name": "Lam Luk Ka Country Club (B-D)",
+    "holes": [
+      { "hole": 1,  "par": 4, "hc": 16 },
+      { "hole": 2,  "par": 5, "hc": 12 },
+      { "hole": 3,  "par": 3, "hc": 18 },
+      { "hole": 4,  "par": 4, "hc": 2 },
+      { "hole": 5,  "par": 4, "hc": 6 },
+      { "hole": 6,  "par": 4, "hc": 10 },
+      { "hole": 7,  "par": 3, "hc": 14 },
+      { "hole": 8,  "par": 4, "hc": 4 },
+      { "hole": 9,  "par": 5, "hc": 8 },
+      { "hole": 10, "par": 4, "hc": 18 },
+      { "hole": 11, "par": 4, "hc": 10 },
+      { "hole": 12, "par": 3, "hc": 14 },
+      { "hole": 13, "par": 5, "hc": 4 },
+      { "hole": 14, "par": 4, "hc": 6 },
+      { "hole": 15, "par": 4, "hc": 8 },
+      { "hole": 16, "par": 3, "hc": 12 },
+      { "hole": 17, "par": 5, "hc": 16 },
+      { "hole": 18, "par": 4, "hc": 2 }
+    ]
+  },
+  {
+    "id": "lam_luk_ka_cd",
+    "name": "Lam Luk Ka Country Club (C-D)",
+    "holes": [
+      { "hole": 1,  "par": 4, "hc": 15 },
+      { "hole": 2,  "par": 5, "hc": 3 },
+      { "hole": 3,  "par": 3, "hc": 17 },
+      { "hole": 4,  "par": 4, "hc": 9 },
+      { "hole": 5,  "par": 4, "hc": 5 },
+      { "hole": 6,  "par": 4, "hc": 11 },
+      { "hole": 7,  "par": 5, "hc": 7 },
+      { "hole": 8,  "par": 3, "hc": 13 },
+      { "hole": 9,  "par": 4, "hc": 1 },
+      { "hole": 10, "par": 4, "hc": 10 },
+      { "hole": 11, "par": 4, "hc": 12 },
+      { "hole": 12, "par": 3, "hc": 14 },
+      { "hole": 13, "par": 5, "hc": 4 },
+      { "hole": 14, "par": 4, "hc": 6 },
+      { "hole": 15, "par": 4, "hc": 8 },
+      { "hole": 16, "par": 3, "hc": 16 },
+      { "hole": 17, "par": 5, "hc": 18 },
       { "hole": 18, "par": 4, "hc": 2 }
     ]
   }
