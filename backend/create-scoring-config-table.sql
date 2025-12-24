@@ -2,7 +2,7 @@
 IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[game_scoring_config]') AND type in (N'U'))
 BEGIN
     CREATE TABLE [dbo].[game_scoring_config] (
-        [game_id] NVARCHAR(50) NOT NULL PRIMARY KEY,
+        [game_id] INT NOT NULL PRIMARY KEY,
         [hole_in_one] INT NOT NULL DEFAULT 10,
         [eagle] INT NOT NULL DEFAULT 5,
         [birdie] INT NOT NULL DEFAULT 2,
@@ -10,7 +10,7 @@ BEGIN
         [created_at] DATETIME NOT NULL DEFAULT GETDATE(),
         [updated_at] DATETIME NOT NULL DEFAULT GETDATE(),
         CONSTRAINT [FK_game_scoring_config_games] FOREIGN KEY ([game_id]) 
-            REFERENCES [dbo].[games] ([game_id]) 
+            REFERENCES [dbo].[games] ([id]) 
             ON DELETE CASCADE
     );
     
