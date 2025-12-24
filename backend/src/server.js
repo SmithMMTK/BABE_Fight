@@ -61,8 +61,4 @@ const PORT = process.env.PORT || 8080;
 const DB_NAME = process.env.DB_NAME || 'babefightdb';
 
 httpServer.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📱 Access from network: http://<your-ip>:${PORT}`);
-  console.log(`💾 Database: Azure SQL (${DB_NAME})`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
 });

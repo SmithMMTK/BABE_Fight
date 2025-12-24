@@ -53,7 +53,6 @@ function ScoringConfigModal({ isOpen, onClose, currentConfig, onSave, isReadOnly
   const handleClose = async () => {
     // Auto-save if there are unsaved changes and not read-only
     if (hasChanges && !isReadOnly) {
-      console.log('[Modal] Auto-saving changes before close');
       await handleSave();
     } else {
       onClose();

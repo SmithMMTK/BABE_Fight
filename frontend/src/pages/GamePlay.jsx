@@ -54,14 +54,11 @@ function GamePlay() {
     
     // If we have H2H data from server, use it directly
     if (h2hStrokeAllocation) {
-      console.log('Using H2H stroke allocation from server:', h2hStrokeAllocation);
       return h2hStrokeAllocation;
     }
     
     // Fallback: Calculate from player handicaps
-    console.log('Calculating stroke allocation from player handicaps');
     const allocation = calculateStrokeAllocation(players, course.holes, turboValues);
-    console.log('Calculated stroke allocation:', allocation);
     return allocation;
   }, [players, course, turboValues, h2hStrokeAllocation]);
 
@@ -81,13 +78,7 @@ function GamePlay() {
   // Load H2H matrix when course and turboValues are ready, or when trigger changes
   useEffect(() => {
     if (course && turboValues && Object.keys(turboValues).length > 0) {
-      console.log('Course and turbo values ready, loading H2H matrix');
       loadH2HMatrix();
-    } else {
-      console.log('Waiting for dependencies:', { 
-        hasCourse: !!course, 
-        turboValuesLength: Object.keys(turboValues).length 
-      });
     }
   }, [course, turboValues, gameId, h2hReloadTrigger]); // Add h2hReloadTrigger
 
@@ -161,7 +152,6 @@ function GamePlay() {
     try {
       // Need course data and turboValues to calculate allocation
       if (!course || !turboValues) {
-        console.log('Waiting for course and turboValues before loading H2H matrix');
         return;
       }
 
@@ -169,13 +159,11 @@ function GamePlay() {
       const { handicapMatrix } = h2hResponse.data;
       
       if (!handicapMatrix || Object.keys(handicapMatrix).length === 0) {
-        console.log('No H2H matrix found');
         setRawH2hMatrix(null);
         setH2hStrokeAllocation(null);
         return;
       }
       
-      console.log('H2H Matrix from server:', handicapMatrix);
       setRawH2hMatrix(handicapMatrix);
       
       // Convert H2H total strokes to per-hole allocation
@@ -189,7 +177,6 @@ function GamePlay() {
           const front9Total = handicapMatrix[fromPlayerId][toPlayerId].front9 || 0;
           const back9Total = handicapMatrix[fromPlayerId][toPlayerId].back9 || 0;
           
-          console.log(`Player ${fromPlayerId} -> ${toPlayerId}: F9=${front9Total}, B9=${back9Total}`);
           
           strokeAlloc[fromPlayerId][toPlayerId] = {
             front9: allocateStrokesFor9Holes(front9Total, front9Holes, turboValues),
@@ -198,7 +185,6 @@ function GamePlay() {
         }
       }
       
-      console.log('Converted H2H stroke allocation:', strokeAlloc);
       setH2hStrokeAllocation(strokeAlloc);
     } catch (err) {
       console.error('Failed to load H2H matrix:', err);
@@ -209,9 +195,7 @@ function GamePlay() {
 
   const loadScoringConfig = async () => {
     try {
-      console.log('[Scoring Config] Loading from API for game:', gameId);
       const response = await api.getScoringConfig(gameId);
-      console.log('[Scoring Config] Loaded:', response.data);
       setScoringConfig(response.data);
     } catch (err) {
       console.error('[Scoring Config] Failed to load:', err);
@@ -341,20 +325,16 @@ function GamePlay() {
       return [...prev, player];
     });
     // Trigger H2H matrix reload when new player joins
-    console.log('Player added, triggering H2H reload');
     setH2hReloadTrigger(prev => prev + 1);
   };
 
   const handlePlayerRemoved = (playerId) => {
     setPlayers(prev => prev.filter(p => p.id !== playerId));
     // Trigger H2H matrix reload when player leaves
-    console.log('Player removed, triggering H2H reload');
     setH2hReloadTrigger(prev => prev + 1);
   };
 
   const handleScoringConfigUpdate = (config) => {
-    console.log('[Socket] Scoring config updated received:', config);
-    console.log('[Socket] Current player:', currentPlayerId, 'isHost:', isHost);
     setScoringConfig(config);
   };
 
@@ -436,7 +416,6 @@ function GamePlay() {
   const handleSaveScoringConfig = async (config) => {
     try {
       await api.updateScoringConfig(gameId, config, currentPlayerId);
-      console.log('Scoring config saved successfully');
       setScoringConfig(config);
     } catch (err) {
       console.error('Failed to save scoring config:', err);
@@ -662,6 +641,40 @@ function GamePlay() {
                   <span>Version Info</span>
                 </button>
                 <button 
+                  className="hamburger-menu-item"
+                  onClick={() => {
+                    setShowHamburgerMenu(false);
+                    console.clear();
+                    console.log('=== Holes 1-18 Debug (All Matchups) ===');
+                    
+                    if (sortedPlayers.length >= 2 && course) {
+                      // Loop through each player as viewPlayer
+                      sortedPlayers.forEach((vPlayer, vIdx) => {
+                        // vs each opponent
+                        sortedPlayers.forEach((opp, oIdx) => {
+                          if (vIdx === oIdx) return; // skip self
+                          
+                          console.log(`\n--- ${vPlayer.username} vs ${opp.username} ---`);
+                          
+                          for (let h = 1; h <= 18; h++) {
+                            const hole = course.holes?.find(hol => hol.hole === h);
+                            if (!hole) continue;
+                            const hc = getStrokeDisplay(strokeAllocation, vPlayer.id, opp.id, h);
+                            const vScore = scores[vPlayer.id]?.[h] || '-';
+                            const oScore = scores[opp.id]?.[h] || '-';
+                            const turbo = turboValues[h] || 1;
+                            const hcDisplay = hc.count > 0 ? `Get${hc.count}` : hc.count < 0 ? `Give${Math.abs(hc.count)}` : 'None';
+                            console.log(`H${h} Par${hole.par} x${turbo} | ${vPlayer.username}:${vScore} vs ${opp.username}:${oScore} HC:${hcDisplay}`);
+                          }
+                        });
+                      });
+                    }
+                  }}
+                >
+                  <span className="menu-icon">🐛</span>
+                  <span>Debug H1-H18</span>
+                </button>
+                <button 
                   className="hamburger-menu-item danger"
                   onClick={handleLeaveGame}
                 >
@@ -669,6 +682,7 @@ function GamePlay() {
                   <span>ออกจากเกม</span>
                 </button>
               </div>
+```
             </div>
           </div>
         )}
@@ -823,7 +837,6 @@ function GamePlay() {
                   </td>
                   {sortedPlayers.map((player, index) => {
                     const handicapDisplay = getStrokeDisplay(strokeAllocation, effectiveViewPlayerId, player.id, hole.hole);
-                    console.log(`Hole ${hole.hole}, Player ${player.username}:`, handicapDisplay);
                     
                     // Determine numeric display with color (skip turbo holes)
                     const isTurboHole = turboValues[hole.hole] > 1;

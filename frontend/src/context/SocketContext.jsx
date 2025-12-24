@@ -28,11 +28,9 @@ export function SocketProvider({ children }) {
     const newSocket = io(SOCKET_URL);
 
     newSocket.on('connect', () => {
-      console.log('Socket connected:', newSocket.id);
     });
 
     newSocket.on('disconnect', () => {
-      console.log('Socket disconnected');
     });
 
     setSocket(newSocket);

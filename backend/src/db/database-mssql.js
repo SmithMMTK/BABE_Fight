@@ -28,7 +28,6 @@ let pool;
 async function getPool() {
   if (!pool) {
     pool = await sql.connect(config);
-    console.log('✅ Connected to Azure SQL Database');
   }
   return pool;
 }
@@ -113,7 +112,6 @@ async function initializeDatabase() {
       END;
     `);
 
-    console.log('✅ Database schema initialized');
   } catch (error) {
     console.error('❌ Database initialization error:', error);
     throw error;

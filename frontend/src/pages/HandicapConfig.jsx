@@ -81,7 +81,6 @@ function HandicapConfig() {
   const loadHandicapMatrix = async () => {
     try {
       const response = await api.getHandicapMatrix(gameId);
-      console.log('Loaded handicap matrix response:', response.data);
       if (response.data.handicapMatrix) {
         setHandicapMatrix(prevMatrix => {
           // Merge loaded data with existing structure
@@ -92,7 +91,6 @@ function HandicapConfig() {
               newMatrix[fromId][toId] = response.data.handicapMatrix[fromId][toId];
             });
           });
-          console.log('Updated handicap matrix:', newMatrix);
           return newMatrix;
         });
       }

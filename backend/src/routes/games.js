@@ -54,9 +54,7 @@ router.post('/create', async (req, res) => {
       VALUES (?, ?, ?, ?)
     `, [hostPin, guestPin, courseId, courseName]);
     
-    console.log('Insert game result:', result);
     const gameId = result.lastID;
-    console.log('Game ID:', gameId);
 
     if (!gameId) {
       throw new Error('Failed to get game ID from insert');
@@ -80,7 +78,6 @@ router.post('/create', async (req, res) => {
       .input('parOrWorse', defaultScoringConfig.parOrWorse)
       .query('INSERT INTO game_scoring_config (game_id, hole_in_one, eagle, birdie, par_or_worse) VALUES (@gameId, @holeInOne, @eagle, @birdie, @parOrWorse)');
     
-    console.log('[Game Created] Default scoring config initialized for game', gameId);
 
     res.json({
       gameId,
@@ -553,12 +550,10 @@ router.put('/:gameId/scoring-config', async (req, res) => {
       await request.query(
         'UPDATE game_scoring_config SET hole_in_one = @holeInOne, eagle = @eagle, birdie = @birdie, par_or_worse = @parOrWorse, updated_at = GETDATE() WHERE game_id = @gameId'
       );
-      console.log('[Scoring Config] Updated config for game', gameId);
     } else {
       await request.query(
         'INSERT INTO game_scoring_config (game_id, hole_in_one, eagle, birdie, par_or_worse) VALUES (@gameId, @holeInOne, @eagle, @birdie, @parOrWorse)'
       );
-      console.log('[Scoring Config] Created new config for game', gameId);
     }
 
     const updatedConfig = {
@@ -570,11 +565,8 @@ router.put('/:gameId/scoring-config', async (req, res) => {
 
     // Broadcast update to all players in the game via Socket.IO
     const io = req.app.get('io');
-    console.log('[Scoring Config] Broadcasting to game-' + gameId, updatedConfig);
-    console.log('[Scoring Config] IO exists?', !!io);
     if (io) {
       io.to(`game-${gameId}`).emit('scoring-config-updated', updatedConfig);
-      console.log('[Scoring Config] Broadcast sent successfully');
     } else {
       console.error('[Scoring Config] IO not found! Cannot broadcast');
     }
