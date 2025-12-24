@@ -639,18 +639,16 @@ function GamePlay() {
                   <span className="menu-icon">⚖️</span>
                   <span>ตั้งค่าแต้มต่อ H2H</span>
                 </button>
-                {isHost && (
-                  <button 
-                    className="hamburger-menu-item"
-                    onClick={() => {
-                      setShowHamburgerMenu(false);
-                      setShowScoringConfigModal(true);
-                    }}
-                  >
-                    <span className="menu-icon">🎯</span>
-                    <span>H2H Scoring Config</span>
-                  </button>
-                )}
+                <button 
+                  className="hamburger-menu-item"
+                  onClick={() => {
+                    setShowHamburgerMenu(false);
+                    setShowScoringConfigModal(true);
+                  }}
+                >
+                  <span className="menu-icon">🎯</span>
+                  <span>H2H Scoring Config{!isHost && ' (ดูอย่างเดียว)'}</span>
+                </button>
                 <button 
                   className="hamburger-menu-item"
                   onClick={() => {
@@ -1098,6 +1096,7 @@ function GamePlay() {
         onClose={() => setShowScoringConfigModal(false)}
         currentConfig={scoringConfig}
         onSave={handleSaveScoringConfig}
+        isReadOnly={!isHost}
       />
     </div>
   );

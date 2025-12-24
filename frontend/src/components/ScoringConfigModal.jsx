@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import './ScoringConfigModal.css';
 
-function ScoringConfigModal({ isOpen, onClose, currentConfig, onSave }) {
+function ScoringConfigModal({ isOpen, onClose, currentConfig, onSave, isReadOnly = false }) {
   const [holeInOne, setHoleInOne] = useState(10);
   const [eagle, setEagle] = useState(5);
   const [birdie, setBirdie] = useState(2);
@@ -48,13 +48,13 @@ function ScoringConfigModal({ isOpen, onClose, currentConfig, onSave }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content scoring-config-modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>H2H Scoring Configuration</h2>
+          <h2>H2H Scoring Configuration {isReadOnly && '(ดูอย่างเดียว)'}</h2>
           <button className="close-button" onClick={onClose}>×</button>
         </div>
         
         <div className="modal-body">
           <p className="modal-description">
-            กำหนดคะแนนที่ได้รับเมื่อชนะหลุม (Win by Score)
+            {isReadOnly ? 'ค่าคะแนนปัจจุบันสำหรับการชนะแต่ละหลุม (เฉพาะ Host แก้ไขได้)' : 'กำหนดคะแนนที่ได้รับเมื่อชนะหลุม (Win by Score)'}
           </p>
           
           <div className="config-form">
@@ -69,7 +69,7 @@ function ScoringConfigModal({ isOpen, onClose, currentConfig, onSave }) {
                 min="0"
                 value={holeInOne}
                 onChange={(e) => setHoleInOne(e.target.value)}
-                disabled={isSaving}
+                disabled={isSaving || isReadOnly}
               />
               <span className="unit">คะแนน</span>
             </div>
@@ -85,7 +85,7 @@ function ScoringConfigModal({ isOpen, onClose, currentConfig, onSave }) {
                 min="0"
                 value={eagle}
                 onChange={(e) => setEagle(e.target.value)}
-                disabled={isSaving}
+                disabled={isSaving || isReadOnly}
               />
               <span className="unit">คะแนน</span>
             </div>
@@ -101,7 +101,7 @@ function ScoringConfigModal({ isOpen, onClose, currentConfig, onSave }) {
                 min="0"
                 value={birdie}
                 onChange={(e) => setBirdie(e.target.value)}
-                disabled={isSaving}
+                disabled={isSaving || isReadOnly}
               />
               <span className="unit">คะแนน</span>
             </div>
@@ -117,7 +117,7 @@ function ScoringConfigModal({ isOpen, onClose, currentConfig, onSave }) {
                 min="0"
                 value={parOrWorse}
                 onChange={(e) => setParOrWorse(e.target.value)}
-                disabled={isSaving}
+                disabled={isSaving || isReadOnly}
               />
               <span className="unit">คะแนน</span>
             </div>
@@ -129,29 +129,41 @@ function ScoringConfigModal({ isOpen, onClose, currentConfig, onSave }) {
         </div>
 
         <div className="modal-footer">
-          <button 
-            className="button-secondary" 
-            onClick={handleReset}
-            disabled={isSaving}
-          >
-            รีเซ็ตค่าเริ่มต้น
-          </button>
-          <div className="footer-right">
-            <button 
-              className="button-secondary" 
-              onClick={onClose}
-              disabled={isSaving}
-            >
-              ยกเลิก
-            </button>
+          {!isReadOnly ? (
+            <>
+              <button 
+                className="button-secondary" 
+                onClick={handleReset}
+                disabled={isSaving}
+              >
+                รีเซ็ตค่าเริ่มต้น
+              </button>
+              <div className="footer-right">
+                <button 
+                  className="button-secondary" 
+                  onClick={onClose}
+                  disabled={isSaving}
+                >
+                  ยกเลิก
+                </button>
+                <button 
+                  className="button-primary" 
+                  onClick={handleSave}
+                  disabled={isSaving}
+                >
+                  {isSaving ? 'กำลังบันทึก...' : 'บันทึก'}
+                </button>
+              </div>
+            </>
+          ) : (
             <button 
               className="button-primary" 
-              onClick={handleSave}
-              disabled={isSaving}
+              onClick={onClose}
+              style={{ marginLeft: 'auto' }}
             >
-              {isSaving ? 'กำลังบันทึก...' : 'บันทึก'}
+              ปิด
             </button>
-          </div>
+          )}
         </div>
       </div>
     </div>
