@@ -122,6 +122,9 @@ async function initializeDatabase() {
 
 // Database helper functions
 const db = {
+  // Expose pool for direct access when needed
+  getPool,
+
   async query(sql, params = []) {
     const pool = await getPool();
     const request = pool.request();

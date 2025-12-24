@@ -477,11 +477,17 @@ router.get('/:gameId/scoring-config', async (req, res) => {
       });
     } else {
       // Return default config and create entry in database
-      await db.run(
-        'INSERT INTO game_scoring_config (game_id, hole_in_one, eagle, birdie, par_or_worse) VALUES (?, ?, ?, ?, ?)',
-        [gameId, defaultScoringConfig.holeInOne, defaultScoringConfig.eagle, defaultScoringConfig.birdie, defaultScoringConfig.parOrWorse]
-      );
+      const pool = await db.getPool();
+      const request = pool.request();
+      await request
+        .input('gameId', gameId)
+        .input('holeInOne', defaultScoringConfig.holeInOne)
+        .input('eagle', defaultScoringConfig.eagle)
+        .input('birdie', defaultScoringConfig.birdie)
+        .input('parOrWorse', defaultScoringConfig.parOrWorse)
+        .query('INSERT INTO game_scoring_config (game_id, hole_in_one, eagle, birdie, par_or_worse) VALUES (@gameId, @holeInOne, @eagle, @birdie, @parOrWorse)');
       
+      console.log('[Scoring Config] Created default config for game', gameId);
       res.json(defaultScoringConfig);
     }
   } catch (error) {
@@ -528,16 +534,25 @@ router.put('/:gameId/scoring-config', async (req, res) => {
       [gameId]
     );
 
+    const pool = await db.getPool();
+    const request = pool.request();
+    request
+      .input('gameId', gameId)
+      .input('holeInOne', holeInOne)
+      .input('eagle', eagle)
+      .input('birdie', birdie)
+      .input('parOrWorse', parOrWorse);
+    
     if (existingConfig) {
-      await db.run(
-        'UPDATE game_scoring_config SET hole_in_one = ?, eagle = ?, birdie = ?, par_or_worse = ?, updated_at = GETDATE() WHERE game_id = ?',
-        [holeInOne, eagle, birdie, parOrWorse, gameId]
+      await request.query(
+        'UPDATE game_scoring_config SET hole_in_one = @holeInOne, eagle = @eagle, birdie = @birdie, par_or_worse = @parOrWorse, updated_at = GETDATE() WHERE game_id = @gameId'
       );
+      console.log('[Scoring Config] Updated config for game', gameId);
     } else {
-      await db.run(
-        'INSERT INTO game_scoring_config (game_id, hole_in_one, eagle, birdie, par_or_worse) VALUES (?, ?, ?, ?, ?)',
-        [gameId, holeInOne, eagle, birdie, parOrWorse]
+      await request.query(
+        'INSERT INTO game_scoring_config (game_id, hole_in_one, eagle, birdie, par_or_worse) VALUES (@gameId, @holeInOne, @eagle, @birdie, @parOrWorse)'
       );
+      console.log('[Scoring Config] Created new config for game', gameId);
     }
 
     const updatedConfig = {
