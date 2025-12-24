@@ -5,6 +5,7 @@ import { api } from '../services/api';
 import PlayersMenu from '../components/PlayersMenu';
 import ScoringConfigModal from '../components/ScoringConfigModal';
 import { calculateStrokeAllocation, getStrokeDisplay, allocateStrokesFor9Holes } from '../utils/strokeAllocation';
+import { calculateH2HScoring, formatH2HDebugOutput } from '../utils/h2hScoring';
 import './GamePlay.css';
 
 function GamePlay() {
@@ -645,27 +646,42 @@ function GamePlay() {
                   onClick={() => {
                     setShowHamburgerMenu(false);
                     console.clear();
-                    console.log('=== Holes 1-18 Debug (All Matchups) ===');
+                    console.log('=== H2H Scoring Calculation (All Matchups) ===');
                     
-                    if (sortedPlayers.length >= 2 && course) {
+                    if (sortedPlayers.length >= 2 && course && scoringConfig) {
                       // Loop through each player as viewPlayer
                       sortedPlayers.forEach((vPlayer, vIdx) => {
                         // vs each opponent
                         sortedPlayers.forEach((opp, oIdx) => {
                           if (vIdx === oIdx) return; // skip self
                           
-                          console.log(`\n--- ${vPlayer.username} vs ${opp.username} ---`);
-                          
+                          // Prepare handicaps
+                          const handicaps = {};
                           for (let h = 1; h <= 18; h++) {
-                            const hole = course.holes?.find(hol => hol.hole === h);
-                            if (!hole) continue;
                             const hc = getStrokeDisplay(strokeAllocation, vPlayer.id, opp.id, h);
-                            const vScore = scores[vPlayer.id]?.[h] || '-';
-                            const oScore = scores[opp.id]?.[h] || '-';
-                            const turbo = turboValues[h] || 1;
-                            const hcDisplay = hc.count > 0 ? `Get${hc.count}` : hc.count < 0 ? `Give${Math.abs(hc.count)}` : 'None';
-                            console.log(`H${h} Par${hole.par} x${turbo} | ${vPlayer.username}:${vScore} vs ${opp.username}:${oScore} HC:${hcDisplay}`);
+                            if (hc.count > 0) {
+                              handicaps[h] = { type: `Get${hc.count}`, value: hc.count };
+                            } else if (hc.count < 0) {
+                              handicaps[h] = { type: `Give${Math.abs(hc.count)}`, value: Math.abs(hc.count) };
+                            } else {
+                              handicaps[h] = { type: 'None', value: 0 };
+                            }
                           }
+                          
+                          // Calculate H2H
+                          const result = calculateH2HScoring({
+                            h2hConfig: scoringConfig,
+                            playerName: vPlayer.username,
+                            opponentName: opp.username,
+                            holes: course.holes,
+                            playerScores: scores[vPlayer.id] || {},
+                            opponentScores: scores[opp.id] || {},
+                            handicaps,
+                            turboValues
+                          });
+                          
+                          // Format and display
+                          formatH2HDebugOutput(result);
                         });
                       });
                     }
