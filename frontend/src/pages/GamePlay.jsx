@@ -639,6 +639,18 @@ function GamePlay() {
                   <span className="menu-icon">⚖️</span>
                   <span>ตั้งค่าแต้มต่อ H2H</span>
                 </button>
+                {isHost && (
+                  <button 
+                    className="hamburger-menu-item"
+                    onClick={() => {
+                      setShowHamburgerMenu(false);
+                      setShowScoringConfigModal(true);
+                    }}
+                  >
+                    <span className="menu-icon">🎯</span>
+                    <span>H2H Scoring Config</span>
+                  </button>
+                )}
                 <button 
                   className="hamburger-menu-item"
                   onClick={() => {
@@ -707,10 +719,6 @@ function GamePlay() {
             onRemovePlayer={handleRemovePlayer}
             onToggleRole={handleToggleRole}
             onUpdateUsername={handleUpdateUsername}
-            onOpenScoringConfig={() => {
-              setShowPlayersMenu(false);
-              setShowScoringConfigModal(true);
-            }}
             onClose={() => setShowPlayersMenu(false)}
           />
         )}
