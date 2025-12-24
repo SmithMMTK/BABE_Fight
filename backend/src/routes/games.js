@@ -69,6 +69,19 @@ router.post('/create', async (req, res) => {
       VALUES (?, ?, 'host', ?)
     `, [gameId, hostUsername, handicap]);
 
+    // Create default scoring config for this game
+    const pool = await db.getPool();
+    const configRequest = pool.request();
+    await configRequest
+      .input('gameId', gameId)
+      .input('holeInOne', defaultScoringConfig.holeInOne)
+      .input('eagle', defaultScoringConfig.eagle)
+      .input('birdie', defaultScoringConfig.birdie)
+      .input('parOrWorse', defaultScoringConfig.parOrWorse)
+      .query('INSERT INTO game_scoring_config (game_id, hole_in_one, eagle, birdie, par_or_worse) VALUES (@gameId, @holeInOne, @eagle, @birdie, @parOrWorse)');
+    
+    console.log('[Game Created] Default scoring config initialized for game', gameId);
+
     res.json({
       gameId,
       hostPin,
@@ -468,7 +481,7 @@ router.get('/:gameId/scoring-config', async (req, res) => {
     );
 
     if (config) {
-      // Return existing config
+      // Return existing config from database (single source of truth)
       res.json({
         holeInOne: config.hole_in_one,
         eagle: config.eagle,
@@ -476,19 +489,12 @@ router.get('/:gameId/scoring-config', async (req, res) => {
         parOrWorse: config.par_or_worse
       });
     } else {
-      // Return default config and create entry in database
-      const pool = await db.getPool();
-      const request = pool.request();
-      await request
-        .input('gameId', gameId)
-        .input('holeInOne', defaultScoringConfig.holeInOne)
-        .input('eagle', defaultScoringConfig.eagle)
-        .input('birdie', defaultScoringConfig.birdie)
-        .input('parOrWorse', defaultScoringConfig.parOrWorse)
-        .query('INSERT INTO game_scoring_config (game_id, hole_in_one, eagle, birdie, par_or_worse) VALUES (@gameId, @holeInOne, @eagle, @birdie, @parOrWorse)');
-      
-      console.log('[Scoring Config] Created default config for game', gameId);
-      res.json(defaultScoringConfig);
+      // Config should have been created when game was created
+      console.error('[Scoring Config] No config found for game', gameId);
+      return res.status(404).json({ 
+        error: 'Scoring configuration not found',
+        message: 'This game may have been created before scoring config feature was added'
+      });
     }
   } catch (error) {
     console.error('Get scoring config error:', error);

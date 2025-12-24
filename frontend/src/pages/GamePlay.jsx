@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 import { api } from '../services/api';
@@ -12,7 +12,6 @@ function GamePlay() {
   const location = useLocation();
   const navigate = useNavigate();
   const socket = useSocket();
-  const prevModalState = useRef(false);
 
   const [game, setGame] = useState(null);
   const [players, setPlayers] = useState([]);
@@ -78,15 +77,6 @@ function GamePlay() {
     };
     fetchVersion();
   }, []);
-
-  // Reload scoring config only when modal transitions from closed to open (not on close)
-  useEffect(() => {
-    if (showScoringConfigModal && !prevModalState.current) {
-      console.log('[Modal] Opening - reloading scoring config');
-      loadScoringConfig();
-    }
-    prevModalState.current = showScoringConfigModal;
-  }, [showScoringConfigModal]);
 
   // Load H2H matrix when course and turboValues are ready, or when trigger changes
   useEffect(() => {
