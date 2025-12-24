@@ -72,9 +72,20 @@ export function calculateH2HScoring({
       result = 'TIE';
     }
 
-    // 4) Determine ScoreType - use WINNER's gross score
+    // 4) Determine ScoreType - use correct gross score based on result
     let scoreType;
-    const grossToEvaluate = (result === 'LOSE') ? opponentGross : playerGross;
+    let grossToEvaluate;
+    
+    if (result === 'WIN') {
+      // Winner uses their own gross score
+      grossToEvaluate = playerGross;
+    } else if (result === 'LOSE') {
+      // Loser uses opponent's gross score (winner's score)
+      grossToEvaluate = opponentGross;
+    } else {
+      // TIE uses player's gross score
+      grossToEvaluate = playerGross;
+    }
     
     if (par === 3 && grossToEvaluate === 1) {
       scoreType = 'HIO';
