@@ -121,11 +121,35 @@ export function calculateH2HScoring({
       playerDelta = -holePoint;
       loseCount++;
     } else if (result === 'TIE') {
-      if (hc.type !== 'None') {
-        if (playerGross < par) {
-          const parPoints = h2hConfig.parOrWorse || h2hConfig.Par || 1;
-          playerDelta = (basePoint - parPoints) * turbo;
+      // TIE case: Check if opponent shot under par (penalty for player)
+      if (opponentGross < par) {
+        // Opponent shot under par - player loses points based on opponent's score
+        let opponentScoreType;
+        if (par === 3 && opponentGross === 1) {
+          opponentScoreType = 'HIO';
+        } else if (opponentGross <= par - 2) {
+          opponentScoreType = 'Eagle';
+        } else if (opponentGross === par - 1) {
+          opponentScoreType = 'Birdie';
         }
+        
+        let penaltyBasePoint;
+        if (opponentScoreType === 'HIO') {
+          penaltyBasePoint = h2hConfig.holeInOne || h2hConfig.HIO || 10;
+        } else if (opponentScoreType === 'Eagle') {
+          penaltyBasePoint = h2hConfig.eagle || h2hConfig.Eagle || 5;
+        } else if (opponentScoreType === 'Birdie') {
+          penaltyBasePoint = h2hConfig.birdie || h2hConfig.Birdie || 2;
+        }
+        
+        const penaltyHolePoint = penaltyBasePoint * turbo;
+        const parPoints = h2hConfig.parOrWorse || h2hConfig.Par || 1;
+        const parHolePoint = parPoints * turbo;
+        playerDelta = -(penaltyHolePoint - parHolePoint); // Negative penalty minus par
+      } else if (hc.type !== 'None' && playerGross < par) {
+        // Normal TIE bonus: Player shot under par with handicap
+        const parPoints = h2hConfig.parOrWorse || h2hConfig.Par || 1;
+        playerDelta = (basePoint - parPoints) * turbo;
       }
       tieCount++;
     }

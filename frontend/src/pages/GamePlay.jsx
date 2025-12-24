@@ -35,6 +35,7 @@ function GamePlay() {
   const [h2hReloadTrigger, setH2hReloadTrigger] = useState(0); // Trigger to force H2H reload
   const [scoringConfig, setScoringConfig] = useState(null); // H2H scoring configuration (hole-in-one, eagle, birdie, par or worse)
   const [showScoringConfigModal, setShowScoringConfigModal] = useState(false);
+  const [editingScoreCell, setEditingScoreCell] = useState(null); // {playerId, holeNumber} for cell being edited
 
   // Get session from localStorage or location.state
   const getSession = () => {
@@ -447,6 +448,13 @@ function GamePlay() {
     }
   };
 
+  const handleScoreSelect = (score) => {
+    if (editingScoreCell) {
+      updateScore(editingScoreCell.playerId, editingScoreCell.holeNumber, score);
+      setEditingScoreCell(null);
+    }
+  };
+
   const calculateTotal = (playerId) => {
     if (!scores[playerId]) return 0;
     return Object.values(scores[playerId]).reduce((sum, score) => sum + (score || 0), 0);
@@ -753,6 +761,56 @@ function GamePlay() {
           />
         )}
 
+        {/* Score Selection Modal */}
+        {editingScoreCell && course && (
+          <div className="score-modal-overlay" onClick={() => setEditingScoreCell(null)}>
+            <div className="score-modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="score-modal-title">
+                {(() => {
+                  const hole = course.holes.find(h => h.hole === editingScoreCell.holeNumber);
+                  const player = players.find(p => p.id === editingScoreCell.playerId);
+                  return `${player?.username} - Hole ${editingScoreCell.holeNumber} (Par ${hole?.par || '-'})`;
+                })()}
+              </div>
+              <div className="score-modal-grid">
+                {(() => {
+                  const hole = course.holes.find(h => h.hole === editingScoreCell.holeNumber);
+                  if (!hole) return null;
+                  return getScoreOptions(hole.par).map(option => {
+                    const currentScore = scores[editingScoreCell.playerId]?.[editingScoreCell.holeNumber];
+                    const isCurrent = currentScore === option.value;
+                    const scoreName = getScoreLabel(option.value, hole.par);
+                    return (
+                      <button
+                        key={option.value}
+                        className={`score-modal-option ${isCurrent ? 'current' : ''}`}
+                        onClick={() => handleScoreSelect(option.value)}
+                      >
+                        <div className="score-number">{option.display}</div>
+                        <div className="score-name">{scoreName}</div>
+                      </button>
+                    );
+                  });
+                })()}
+              </div>
+              {scores[editingScoreCell.playerId]?.[editingScoreCell.holeNumber] && (
+                <button
+                  className="score-modal-delete"
+                  onClick={() => handleScoreSelect(null)}
+                >
+                  ลบสกอร์
+                </button>
+              )}
+              <button
+                className="score-modal-cancel"
+                onClick={() => setEditingScoreCell(null)}
+              >
+                ยกเลิก
+              </button>
+            </div>
+          </div>
+        )}
+
         {error && <div className="error-message">{error}</div>}
       </div>
 
@@ -890,29 +948,19 @@ function GamePlay() {
                           {scores[player.id]?.[hole.hole] ? (
                             <div 
                               className={`score-display ${getScoreClass(scores[player.id][hole.hole], hole.par)}`}
-                              onClick={() => canEditScore(player.id) && updateScore(player.id, hole.hole, null)}
+                              onClick={() => canEditScore(player.id) && setEditingScoreCell({playerId: player.id, holeNumber: hole.hole})}
                               style={{cursor: canEditScore(player.id) ? 'pointer' : 'default', opacity: canEditScore(player.id) ? 1 : 0.7}}
                             >
                               {scores[player.id][hole.hole]}
                             </div>
                           ) : canEditScore(player.id) ? (
-                            <select
+                            <div 
                               className="score-select"
-                              value=""
-                              onChange={(e) => {
-                                const value = parseInt(e.target.value);
-                                if (value) {
-                                  updateScore(player.id, hole.hole, value);
-                                }
-                              }}
+                              onClick={() => setEditingScoreCell({playerId: player.id, holeNumber: hole.hole})}
+                              style={{cursor: 'pointer'}}
                             >
-                              <option value="">-</option>
-                              {getScoreOptions(hole.par).map(option => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
+                              -
+                            </div>
                           ) : (
                             <div style={{fontSize: '1rem', color: '#999', textAlign: 'center', width: '100%'}}>-</div>
                           )}
@@ -1066,29 +1114,19 @@ function GamePlay() {
                           {scores[player.id]?.[hole.hole] ? (
                             <div 
                               className={`score-display ${getScoreClass(scores[player.id][hole.hole], hole.par)}`}
-                              onClick={() => canEditScore(player.id) && updateScore(player.id, hole.hole, null)}
+                              onClick={() => canEditScore(player.id) && setEditingScoreCell({playerId: player.id, holeNumber: hole.hole})}
                               style={{cursor: canEditScore(player.id) ? 'pointer' : 'default', opacity: canEditScore(player.id) ? 1 : 0.7}}
                             >
                               {scores[player.id][hole.hole]}
                             </div>
                           ) : canEditScore(player.id) ? (
-                            <select
+                            <div 
                               className="score-select"
-                              value=""
-                              onChange={(e) => {
-                                const value = parseInt(e.target.value);
-                                if (value) {
-                                  updateScore(player.id, hole.hole, value);
-                                }
-                              }}
+                              onClick={() => setEditingScoreCell({playerId: player.id, holeNumber: hole.hole})}
+                              style={{cursor: 'pointer'}}
                             >
-                              <option value="">-</option>
-                              {getScoreOptions(hole.par).map(option => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
+                              -
+                            </div>
                           ) : (
                             <div style={{fontSize: '1rem', color: '#999', textAlign: 'center', width: '100%'}}>-</div>
                           )}
