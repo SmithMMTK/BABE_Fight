@@ -19,14 +19,41 @@ Multi-player real-time golf scorecard application with WebSocket synchronization
 
 ## Quick Start (Local Development)
 
+**Important: This project uses Azure SQL Database for all environments.**
+
+### One-Time Setup
+
+Configure your local environment to use Azure SQL:
+
 ```bash
-# Run the project
-./scripts/run-local.sh
+# Configure Azure SQL connection (one-time)
+bash scripts/setup-local-azure-sql.sh
+
+# This will:
+# - Create a development database (babefightdb-local)
+# - Add your IP to firewall
+# - Create backend/.env with connection details
+# - Test the connection
+```
+
+### Daily Development
+
+```bash
+# Start development server
+bash scripts/run-local.sh
 
 # Access application
 Frontend: http://localhost:5173
 Backend: http://localhost:8080
 ```
+
+📚 See [docs/setup/LOCAL_AZURE_SQL_SETUP.md](./docs/setup/LOCAL_AZURE_SQL_SETUP.md) for detailed setup guide.
+
+**Benefits of Azure SQL for local development:**
+- ✅ Same database engine as production (MSSQL)
+- ✅ Catch foreign key constraint issues early
+- ✅ Test schema changes before deployment
+- ✅ No production deployment surprises!
 
 ## Production Deployment
 

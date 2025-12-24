@@ -1,8 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 import { api } from '../services/api';
 import PlayersMenu from '../components/PlayersMenu';
+import ScoringConfigModal from '../components/ScoringConfigModal';
+import { calculateStrokeAllocation, getStrokeDisplay, allocateStrokesFor9Holes } from '../utils/strokeAllocation';
+import { calculateH2HScoring, formatH2HDebugOutput } from '../utils/h2hScoring';
 import './GamePlay.css';
 
 function GamePlay() {
@@ -27,6 +30,12 @@ function GamePlay() {
   const [showTurboDropdown, setShowTurboDropdown] = useState(null); // holeNumber
   const [lastTapTime, setLastTapTime] = useState({});
   const [lastTapHole, setLastTapHole] = useState(null);
+  const [h2hStrokeAllocation, setH2hStrokeAllocation] = useState(null); // H2H handicap matrix from server
+  const [rawH2hMatrix, setRawH2hMatrix] = useState(null); // Raw H2H matrix from database
+  const [h2hReloadTrigger, setH2hReloadTrigger] = useState(0); // Trigger to force H2H reload
+  const [scoringConfig, setScoringConfig] = useState(null); // H2H scoring configuration (hole-in-one, eagle, birdie, par or worse)
+  const [showScoringConfigModal, setShowScoringConfigModal] = useState(false);
+  const [editingScoreCell, setEditingScoreCell] = useState(null); // {playerId, holeNumber} for cell being edited
 
   // Get session from localStorage or location.state
   const getSession = () => {
@@ -39,6 +48,21 @@ function GamePlay() {
 
   const sessionData = getSession();
   const { isHost, hostPin, guestPin, username } = sessionData || {};
+
+  // Calculate stroke allocation for H2H handicap
+  // Use H2H matrix from server if available, otherwise calculate from player handicaps
+  const strokeAllocation = useMemo(() => {
+    if (!course || !players || players.length === 0) return {};
+    
+    // If we have H2H data from server, use it directly
+    if (h2hStrokeAllocation) {
+      return h2hStrokeAllocation;
+    }
+    
+    // Fallback: Calculate from player handicaps
+    const allocation = calculateStrokeAllocation(players, course.holes, turboValues);
+    return allocation;
+  }, [players, course, turboValues, h2hStrokeAllocation]);
 
   useEffect(() => {
     // Fetch version info
@@ -53,6 +77,13 @@ function GamePlay() {
     fetchVersion();
   }, []);
 
+  // Load H2H matrix when course and turboValues are ready, or when trigger changes
+  useEffect(() => {
+    if (course && turboValues && Object.keys(turboValues).length > 0) {
+      loadH2HMatrix();
+    }
+  }, [course, turboValues, gameId, h2hReloadTrigger]); // Add h2hReloadTrigger
+
   useEffect(() => {
     // Save session to localStorage when component mounts
     if (location.state && gameId) {
@@ -66,6 +97,7 @@ function GamePlay() {
 
     loadGameData();
     loadCourse();
+    loadScoringConfig();
 
     if (socket) {
       socket.emit('join-game', gameId);
@@ -76,6 +108,7 @@ function GamePlay() {
       socket.on('turbo-updated', handleTurboUpdate);
       socket.on('player-added', handlePlayerAdded);
       socket.on('player-removed', handlePlayerRemoved);
+      socket.on('scoring-config-updated', handleScoringConfigUpdate);
 
       return () => {
         socket.off('score-updated', handleScoreUpdate);
@@ -84,6 +117,7 @@ function GamePlay() {
         socket.off('turbo-updated', handleTurboUpdate);
         socket.off('player-added', handlePlayerAdded);
         socket.off('player-removed', handlePlayerRemoved);
+        socket.off('scoring-config-updated', handleScoringConfigUpdate);
       };
     }
   }, [socket, gameId]);
@@ -113,6 +147,62 @@ function GamePlay() {
       console.error('Failed to load game:', err);
       setError('ไม่สามารถโหลดข้อมูลเกมได้');
       setLoading(false);
+    }
+  };
+
+  const loadH2HMatrix = async () => {
+    try {
+      // Need course data and turboValues to calculate allocation
+      if (!course || !turboValues) {
+        return;
+      }
+
+      const h2hResponse = await api.getHandicapMatrix(gameId);
+      const { handicapMatrix } = h2hResponse.data;
+      
+      if (!handicapMatrix || Object.keys(handicapMatrix).length === 0) {
+        setRawH2hMatrix(null);
+        setH2hStrokeAllocation(null);
+        return;
+      }
+      
+      setRawH2hMatrix(handicapMatrix);
+      
+      // Convert H2H total strokes to per-hole allocation
+      const strokeAlloc = {};
+      const front9Holes = course.holes.filter(h => h.hole >= 1 && h.hole <= 9);
+      const back9Holes = course.holes.filter(h => h.hole >= 10 && h.hole <= 18);
+      
+      for (const fromPlayerId in handicapMatrix) {
+        strokeAlloc[fromPlayerId] = {};
+        for (const toPlayerId in handicapMatrix[fromPlayerId]) {
+          const front9Total = handicapMatrix[fromPlayerId][toPlayerId].front9 || 0;
+          const back9Total = handicapMatrix[fromPlayerId][toPlayerId].back9 || 0;
+          
+          
+          strokeAlloc[fromPlayerId][toPlayerId] = {
+            front9: allocateStrokesFor9Holes(front9Total, front9Holes, turboValues),
+            back9: allocateStrokesFor9Holes(back9Total, back9Holes, turboValues)
+          };
+        }
+      }
+      
+      setH2hStrokeAllocation(strokeAlloc);
+    } catch (err) {
+      console.error('Failed to load H2H matrix:', err);
+      setRawH2hMatrix(null);
+      setH2hStrokeAllocation(null);
+    }
+  };
+
+  const loadScoringConfig = async () => {
+    try {
+      const response = await api.getScoringConfig(gameId);
+      setScoringConfig(response.data);
+    } catch (err) {
+      console.error('[Scoring Config] Failed to load:', err);
+      // Set default values if loading fails
+      setScoringConfig({ holeInOne: 10, eagle: 5, birdie: 2, parOrWorse: 1 });
     }
   };
 
@@ -236,10 +326,18 @@ function GamePlay() {
       if (prev.some(p => p.id === player.id)) return prev;
       return [...prev, player];
     });
+    // Trigger H2H matrix reload when new player joins
+    setH2hReloadTrigger(prev => prev + 1);
   };
 
   const handlePlayerRemoved = (playerId) => {
     setPlayers(prev => prev.filter(p => p.id !== playerId));
+    // Trigger H2H matrix reload when player leaves
+    setH2hReloadTrigger(prev => prev + 1);
+  };
+
+  const handleScoringConfigUpdate = (config) => {
+    setScoringConfig(config);
   };
 
   // Player management functions
@@ -317,6 +415,16 @@ function GamePlay() {
     navigate('/');
   };
 
+  const handleSaveScoringConfig = async (config) => {
+    try {
+      await api.updateScoringConfig(gameId, config, currentPlayerId);
+      setScoringConfig(config);
+    } catch (err) {
+      console.error('Failed to save scoring config:', err);
+      throw err; // Re-throw for modal to handle
+    }
+  };
+
   const updateScore = async (playerId, holeNumber, score) => {
     try {
       await api.updateScore({ playerId, holeNumber, score });
@@ -337,6 +445,13 @@ function GamePlay() {
     } catch (err) {
       console.error('Failed to update score:', err);
       setError('ไม่สามารถบันทึกคะแนนได้');
+    }
+  };
+
+  const handleScoreSelect = (score) => {
+    if (editingScoreCell) {
+      updateScore(editingScoreCell.playerId, editingScoreCell.holeNumber, score);
+      setEditingScoreCell(null);
     }
   };
 
@@ -430,6 +545,142 @@ function GamePlay() {
     return playerId === currentPlayerId; // GUEST can only edit their own score
   };
 
+  // Function to calculate H2H indicator for a specific hole
+  const getH2HIndicator = (viewPlayerId, opponentId, holeNumber) => {
+    // Need all required data
+    if (!course || !scoringConfig || !scores[viewPlayerId] || !scores[opponentId]) {
+      return null;
+    }
+
+    const hole = course.holes.find(h => h.hole === holeNumber);
+    if (!hole) return null;
+
+    const playerScore = scores[viewPlayerId][holeNumber];
+    const opponentScore = scores[opponentId][holeNumber];
+
+    // Both scores must exist
+    if (!playerScore || !opponentScore) return null;
+
+    // Get handicap for this hole
+    const handicapDisplay = getStrokeDisplay(strokeAllocation, viewPlayerId, opponentId, holeNumber);
+    let hc = { type: 'None', value: 0 };
+    if (handicapDisplay.count > 0) {
+      hc = { type: `Get${handicapDisplay.count}`, value: handicapDisplay.count };
+    } else if (handicapDisplay.count < 0) {
+      hc = { type: `Give${Math.abs(handicapDisplay.count)}`, value: Math.abs(handicapDisplay.count) };
+    }
+
+    // Calculate net scores
+    let playerNet = playerScore;
+    let opponentNet = opponentScore;
+    
+    if (hc.type.startsWith('Get')) {
+      playerNet = playerScore - hc.value;
+    } else if (hc.type.startsWith('Give')) {
+      opponentNet = opponentScore - hc.value;
+    }
+
+    // Determine result
+    let result;
+    if (playerNet < opponentNet) {
+      result = 'WIN';
+    } else if (playerNet > opponentNet) {
+      result = 'LOSE';
+    } else {
+      result = 'TIE';
+    }
+
+    // Determine ScoreType
+    let grossToEvaluate;
+    if (result === 'WIN') {
+      grossToEvaluate = playerScore;
+    } else if (result === 'LOSE') {
+      grossToEvaluate = opponentScore;
+    } else {
+      grossToEvaluate = playerScore;
+    }
+
+    const par = hole.par;
+    let scoreType;
+    if (par === 3 && grossToEvaluate === 1) {
+      scoreType = 'HIO';
+    } else if (grossToEvaluate <= par - 2) {
+      scoreType = 'Eagle';
+    } else if (grossToEvaluate === par - 1) {
+      scoreType = 'Birdie';
+    } else {
+      scoreType = 'Par';
+    }
+
+    // Get BasePoint
+    let basePoint;
+    if (scoreType === 'HIO') {
+      basePoint = scoringConfig.holeInOne || scoringConfig.HIO || 10;
+    } else if (scoreType === 'Eagle') {
+      basePoint = scoringConfig.eagle || scoringConfig.Eagle || 5;
+    } else if (scoreType === 'Birdie') {
+      basePoint = scoringConfig.birdie || scoringConfig.Birdie || 2;
+    } else {
+      basePoint = scoringConfig.parOrWorse || scoringConfig.Par || 1;
+    }
+
+    // Get turbo
+    const turbo = turboValues[holeNumber] || 1;
+    const holePoint = basePoint * turbo;
+
+    // Calculate PlayerDelta
+    let playerDelta = 0;
+    if (result === 'WIN') {
+      playerDelta = holePoint;
+    } else if (result === 'LOSE') {
+      playerDelta = -holePoint;
+    } else if (result === 'TIE') {
+      // Check if opponent shot under par (penalty)
+      if (opponentScore < par) {
+        let opponentScoreType;
+        if (par === 3 && opponentScore === 1) {
+          opponentScoreType = 'HIO';
+        } else if (opponentScore <= par - 2) {
+          opponentScoreType = 'Eagle';
+        } else if (opponentScore === par - 1) {
+          opponentScoreType = 'Birdie';
+        }
+        
+        let penaltyBasePoint;
+        if (opponentScoreType === 'HIO') {
+          penaltyBasePoint = scoringConfig.holeInOne || scoringConfig.HIO || 10;
+        } else if (opponentScoreType === 'Eagle') {
+          penaltyBasePoint = scoringConfig.eagle || scoringConfig.Eagle || 5;
+        } else if (opponentScoreType === 'Birdie') {
+          penaltyBasePoint = scoringConfig.birdie || scoringConfig.Birdie || 2;
+        }
+        
+        const penaltyHolePoint = penaltyBasePoint * turbo;
+        const parPoints = scoringConfig.parOrWorse || scoringConfig.Par || 1;
+        const parHolePoint = parPoints * turbo;
+        playerDelta = -(penaltyHolePoint - parHolePoint);
+      } else if (hc.type !== 'None' && playerScore < par) {
+        // Normal TIE bonus
+        const parPoints = scoringConfig.parOrWorse || scoringConfig.Par || 1;
+        playerDelta = (basePoint - parPoints) * turbo;
+      }
+    }
+
+    return playerDelta;
+  };
+
+  // Function to calculate H2H total for a range of holes
+  const getH2HTotalForHoles = (viewPlayerId, opponentId, startHole, endHole) => {
+    let total = 0;
+    for (let h = startHole; h <= endHole; h++) {
+      const delta = getH2HIndicator(viewPlayerId, opponentId, h);
+      if (delta) {
+        total += delta;
+      }
+    }
+    return total;
+  };
+
   return (
     <div className="container gameplay-container">
       <div className="game-header">
@@ -508,11 +759,80 @@ function GamePlay() {
                   className="hamburger-menu-item"
                   onClick={() => {
                     setShowHamburgerMenu(false);
+                    navigate(`/game/${gameId}/handicap`);
+                  }}
+                >
+                  <span className="menu-icon">⚖️</span>
+                  <span>ตั้งค่าแต้มต่อ H2H</span>
+                </button>
+                <button 
+                  className="hamburger-menu-item"
+                  onClick={() => {
+                    setShowHamburgerMenu(false);
+                    setShowScoringConfigModal(true);
+                  }}
+                >
+                  <span className="menu-icon">🎯</span>
+                  <span>H2H Scoring Config{!isHost && ' (ดูอย่างเดียว)'}</span>
+                </button>
+                <button 
+                  className="hamburger-menu-item"
+                  onClick={() => {
+                    setShowHamburgerMenu(false);
                     setShowVersionModal(true);
                   }}
                 >
                   <span className="menu-icon">ℹ️</span>
                   <span>Version Info</span>
+                </button>
+                <button 
+                  className="hamburger-menu-item"
+                  onClick={() => {
+                    setShowHamburgerMenu(false);
+                    console.clear();
+                    console.log('=== H2H Scoring Calculation (All Matchups) ===');
+                    
+                    if (sortedPlayers.length >= 2 && course && scoringConfig) {
+                      // Loop through each player as viewPlayer
+                      sortedPlayers.forEach((vPlayer, vIdx) => {
+                        // vs each opponent
+                        sortedPlayers.forEach((opp, oIdx) => {
+                          if (vIdx === oIdx) return; // skip self
+                          
+                          // Prepare handicaps
+                          const handicaps = {};
+                          for (let h = 1; h <= 18; h++) {
+                            const hc = getStrokeDisplay(strokeAllocation, vPlayer.id, opp.id, h);
+                            if (hc.count > 0) {
+                              handicaps[h] = { type: `Get${hc.count}`, value: hc.count };
+                            } else if (hc.count < 0) {
+                              handicaps[h] = { type: `Give${Math.abs(hc.count)}`, value: Math.abs(hc.count) };
+                            } else {
+                              handicaps[h] = { type: 'None', value: 0 };
+                            }
+                          }
+                          
+                          // Calculate H2H
+                          const result = calculateH2HScoring({
+                            h2hConfig: scoringConfig,
+                            playerName: vPlayer.username,
+                            opponentName: opp.username,
+                            holes: course.holes,
+                            playerScores: scores[vPlayer.id] || {},
+                            opponentScores: scores[opp.id] || {},
+                            handicaps,
+                            turboValues
+                          });
+                          
+                          // Format and display
+                          formatH2HDebugOutput(result);
+                        });
+                      });
+                    }
+                  }}
+                >
+                  <span className="menu-icon">🐛</span>
+                  <span>Debug H1-H18</span>
                 </button>
                 <button 
                   className="hamburger-menu-item danger"
@@ -522,6 +842,7 @@ function GamePlay() {
                   <span>ออกจากเกม</span>
                 </button>
               </div>
+```
             </div>
           </div>
         )}
@@ -576,6 +897,56 @@ function GamePlay() {
           />
         )}
 
+        {/* Score Selection Modal */}
+        {editingScoreCell && course && (
+          <div className="score-modal-overlay" onClick={() => setEditingScoreCell(null)}>
+            <div className="score-modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="score-modal-title">
+                {(() => {
+                  const hole = course.holes.find(h => h.hole === editingScoreCell.holeNumber);
+                  const player = players.find(p => p.id === editingScoreCell.playerId);
+                  return `${player?.username} - Hole ${editingScoreCell.holeNumber} (Par ${hole?.par || '-'})`;
+                })()}
+              </div>
+              <div className="score-modal-grid">
+                {(() => {
+                  const hole = course.holes.find(h => h.hole === editingScoreCell.holeNumber);
+                  if (!hole) return null;
+                  return getScoreOptions(hole.par).map(option => {
+                    const currentScore = scores[editingScoreCell.playerId]?.[editingScoreCell.holeNumber];
+                    const isCurrent = currentScore === option.value;
+                    const scoreName = getScoreLabel(option.value, hole.par);
+                    return (
+                      <button
+                        key={option.value}
+                        className={`score-modal-option ${isCurrent ? 'current' : ''}`}
+                        onClick={() => handleScoreSelect(option.value)}
+                      >
+                        <div className="score-number">{option.display}</div>
+                        <div className="score-name">{scoreName}</div>
+                      </button>
+                    );
+                  });
+                })()}
+              </div>
+              {scores[editingScoreCell.playerId]?.[editingScoreCell.holeNumber] && (
+                <button
+                  className="score-modal-delete"
+                  onClick={() => handleScoreSelect(null)}
+                >
+                  ลบสกอร์
+                </button>
+              )}
+              <button
+                className="score-modal-cancel"
+                onClick={() => setEditingScoreCell(null)}
+              >
+                ยกเลิก
+              </button>
+            </div>
+          </div>
+        )}
+
         {error && <div className="error-message">{error}</div>}
       </div>
 
@@ -586,11 +957,40 @@ function GamePlay() {
             <thead>
               <tr>
                 <th className="hole-par-col-vertical">Hole</th>
-                {sortedPlayers.map(player => (
-                  <th key={player.id} className="player-col-vertical">
-                    {player.username.trim()}
-                  </th>
-                ))}
+                {sortedPlayers.map((player, index) => {
+                  // Calculate H2H handicap display for header
+                  let handicapInfo = '';
+                  if (index === 0) {
+                    // Focus player - show their handicap
+                    handicapInfo = player.handicap ? ` (${player.handicap})` : '';
+                  } else {
+                    // Other players - show stroke relationship
+                    const strokeDiff = (player.handicap || 0) - (sortedPlayers[0].handicap || 0);
+                    if (strokeDiff > 0) {
+                      // Focus player gives strokes (red -)
+                      handicapInfo = ` (-${strokeDiff})`;
+                    } else if (strokeDiff < 0) {
+                      // Focus player receives strokes (green +)
+                      handicapInfo = ` (+${Math.abs(strokeDiff)})`;
+                    }
+                  }
+                  
+                  return (
+                    <th key={player.id} className="player-col-vertical">
+                      <div>{player.username.trim()}</div>
+                      {handicapInfo && (
+                        <div style={{
+                          fontSize: '0.75rem',
+                          fontWeight: 'normal',
+                          color: index === 0 ? '#666' : (handicapInfo.startsWith(' (+') ? 'green' : 'red'),
+                          marginTop: '2px'
+                        }}>
+                          {handicapInfo}
+                        </div>
+                      )}
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
@@ -645,49 +1045,129 @@ function GamePlay() {
                       </div>
                     </div>
                   </td>
-                  {sortedPlayers.map(player => (
-                    <td key={player.id} className="score-cell-vertical">
-                      {scores[player.id]?.[hole.hole] ? (
-                        <div 
-                          className={`score-display ${getScoreClass(scores[player.id][hole.hole], hole.par)}`}
-                          onClick={() => canEditScore(player.id) && updateScore(player.id, hole.hole, null)}
-                          style={{cursor: canEditScore(player.id) ? 'pointer' : 'default', opacity: canEditScore(player.id) ? 1 : 0.7}}
-                        >
-                          {scores[player.id][hole.hole]}
+                  {sortedPlayers.map((player, index) => {
+                    const handicapDisplay = getStrokeDisplay(strokeAllocation, effectiveViewPlayerId, player.id, hole.hole);
+                    
+                    // Determine numeric display with color (skip turbo holes)
+                    const isTurboHole = turboValues[hole.hole] > 1;
+                    let strokeIndicator = null;
+                    if (!isTurboHole && handicapDisplay.count !== 0) {
+                      const absCount = Math.abs(handicapDisplay.count);
+                      strokeIndicator = {
+                        count: absCount,
+                        color: handicapDisplay.count > 0 ? '#4caf50' : '#f44336' // green for receiving, red for giving
+                      };
+                    }
+                    
+                    return (
+                      <td key={player.id} className={`score-cell-vertical ${index === 0 ? 'focus-player' : ''}`}>
+                        <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'visible' }}>
+                          {/* H2H Indicator (top-left) - show on opponent columns */}
+                          {index > 0 && sortedPlayers.length > 1 && (() => {
+                            const viewPlayer = sortedPlayers[0];
+                            const delta = getH2HIndicator(viewPlayer.id, player.id, hole.hole);
+                            if (!delta || delta === 0) return null;
+                            
+                            const absValue = Math.abs(delta);
+                            const emoji = delta > 0 ? '🎯' : '⚠️';
+                            const displayText = absValue === 1 ? emoji : `${emoji} x${absValue}`;
+                            
+                            return (
+                              <div 
+                                className="h2h-indicator"
+                                style={{
+                                  position: 'absolute',
+                                  top: '2px',
+                                  left: '2px',
+                                  fontSize: '0.75rem',
+                                  fontWeight: 'bold',
+                                  zIndex: 10,
+                                  lineHeight: 1,
+                                  pointerEvents: 'none',
+                                  textShadow: '0 0 2px white'
+                                }}
+                              >
+                                {displayText}
+                              </div>
+                            );
+                          })()}
+                          {/* Numeric handicap indicator */}
+                          {strokeIndicator && (
+                            <div 
+                              className="handicap-indicator"
+                              style={{
+                                position: 'absolute',
+                                top: '2px',
+                                right: '2px',
+                                fontSize: '0.875rem',
+                                fontWeight: 'bold',
+                                color: strokeIndicator.color,
+                                zIndex: 2,
+                                lineHeight: 1,
+                                pointerEvents: 'none'
+                              }}
+                            >
+                              {strokeIndicator.count}
+                            </div>
+                          )}
+                          {scores[player.id]?.[hole.hole] ? (
+                            <div 
+                              className={`score-display ${getScoreClass(scores[player.id][hole.hole], hole.par)}`}
+                              onClick={() => canEditScore(player.id) && setEditingScoreCell({playerId: player.id, holeNumber: hole.hole})}
+                              style={{cursor: canEditScore(player.id) ? 'pointer' : 'default', opacity: canEditScore(player.id) ? 1 : 0.7}}
+                            >
+                              {scores[player.id][hole.hole]}
+                            </div>
+                          ) : canEditScore(player.id) ? (
+                            <div 
+                              className="score-select"
+                              onClick={() => setEditingScoreCell({playerId: player.id, holeNumber: hole.hole})}
+                              style={{cursor: 'pointer'}}
+                            >
+                              -
+                            </div>
+                          ) : (
+                            <div style={{fontSize: '1rem', color: '#999', textAlign: 'center', width: '100%'}}>-</div>
+                          )}
                         </div>
-                      ) : canEditScore(player.id) ? (
-                        <select
-                          className="score-select"
-                          value=""
-                          onChange={(e) => {
-                            const value = parseInt(e.target.value);
-                            if (value) {
-                              updateScore(player.id, hole.hole, value);
-                            }
-                          }}
-                        >
-                          <option value="">-</option>
-                          {getScoreOptions(hole.par).map(option => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <div style={{fontSize: '1rem', color: '#999', textAlign: 'center', width: '100%'}}>-</div>
-                      )}
-                    </td>
-                  ))}
+                      </td>
+                    );
+                  })}
                 </tr>
               ))}
               {/* Front 9 Total */}
               <tr className="total-row">
                 <td className="hole-par-col-vertical"><strong>1-9</strong></td>
-                {sortedPlayers.map(player => (
-                  <td key={player.id} className="total-cell">
-                    <strong>{calculateFront9(player.id)}</strong>
-                  </td>
-                ))}
+                {sortedPlayers.map((player, index) => {
+                  const scoreTotal = calculateFront9(player.id);
+                  let h2hDisplay = null;
+                  
+                  // Show H2H total for opponents only
+                  if (index > 0 && sortedPlayers.length > 1) {
+                    const viewPlayer = sortedPlayers[0];
+                    const h2hTotal = getH2HTotalForHoles(viewPlayer.id, player.id, 1, 9);
+                    if (h2hTotal !== 0) {
+                      const sign = h2hTotal > 0 ? '+' : '';
+                      h2hDisplay = (
+                        <div style={{
+                          fontSize: '0.85rem',
+                          fontWeight: 'bold',
+                          color: h2hTotal > 0 ? '#4caf50' : '#f44336',
+                          marginTop: '2px'
+                        }}>
+                          ({sign}{h2hTotal})
+                        </div>
+                      );
+                    }
+                  }
+                  
+                  return (
+                    <td key={player.id} className={`total-cell ${index === 0 ? 'focus-player' : ''}`}>
+                      <strong>{scoreTotal}</strong>
+                      {h2hDisplay}
+                    </td>
+                  );
+                })}
               </tr>
             </tbody>
           </table>
@@ -697,11 +1177,40 @@ function GamePlay() {
             <thead>
               <tr>
                 <th className="hole-par-col-vertical">Hole</th>
-                {sortedPlayers.map(player => (
-                  <th key={player.id} className="player-col-vertical">
-                    {player.username.trim()}
-                  </th>
-                ))}
+                {sortedPlayers.map((player, index) => {
+                  // Calculate H2H handicap display for header
+                  let handicapInfo = '';
+                  if (index === 0) {
+                    // Focus player - show their handicap
+                    handicapInfo = player.handicap ? ` (${player.handicap})` : '';
+                  } else {
+                    // Other players - show stroke relationship
+                    const strokeDiff = (player.handicap || 0) - (sortedPlayers[0].handicap || 0);
+                    if (strokeDiff > 0) {
+                      // Focus player gives strokes (red -)
+                      handicapInfo = ` (-${strokeDiff})`;
+                    } else if (strokeDiff < 0) {
+                      // Focus player receives strokes (green +)
+                      handicapInfo = ` (+${Math.abs(strokeDiff)})`;
+                    }
+                  }
+                  
+                  return (
+                    <th key={player.id} className="player-col-vertical">
+                      <div>{player.username.trim()}</div>
+                      {handicapInfo && (
+                        <div style={{
+                          fontSize: '0.75rem',
+                          fontWeight: 'normal',
+                          color: index === 0 ? '#666' : (handicapInfo.startsWith(' (+') ? 'green' : 'red'),
+                          marginTop: '2px'
+                        }}>
+                          {handicapInfo}
+                        </div>
+                      )}
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
@@ -756,63 +1265,177 @@ function GamePlay() {
                       </div>
                     </div>
                   </td>
-                  {sortedPlayers.map(player => (
-                    <td key={player.id} className="score-cell-vertical">
-                      {scores[player.id]?.[hole.hole] ? (
-                        <div 
-                          className={`score-display ${getScoreClass(scores[player.id][hole.hole], hole.par)}`}
-                          onClick={() => canEditScore(player.id) && updateScore(player.id, hole.hole, null)}
-                          style={{cursor: canEditScore(player.id) ? 'pointer' : 'default', opacity: canEditScore(player.id) ? 1 : 0.7}}
-                        >
-                          {scores[player.id][hole.hole]}
+                  {sortedPlayers.map((player, index) => {
+                    const handicapDisplay = getStrokeDisplay(strokeAllocation, effectiveViewPlayerId, player.id, hole.hole);
+                    
+                    // Determine numeric display with color (skip turbo holes)
+                    const isTurboHole = turboValues[hole.hole] > 1;
+                    let strokeIndicator = null;
+                    if (!isTurboHole && handicapDisplay.count !== 0) {
+                      const absCount = Math.abs(handicapDisplay.count);
+                      strokeIndicator = {
+                        count: absCount,
+                        color: handicapDisplay.count > 0 ? '#4caf50' : '#f44336' // green for receiving, red for giving
+                      };
+                    }
+                    
+                    return (
+                      <td key={player.id} className={`score-cell-vertical ${index === 0 ? 'focus-player' : ''}`}>
+                        <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'visible' }}>
+                          {/* H2H Indicator (top-left) - show on opponent columns */}
+                          {index > 0 && sortedPlayers.length > 1 && (() => {
+                            const viewPlayer = sortedPlayers[0];
+                            const delta = getH2HIndicator(viewPlayer.id, player.id, hole.hole);
+                            if (!delta || delta === 0) return null;
+                            
+                            const absValue = Math.abs(delta);
+                            const emoji = delta > 0 ? '🎯' : '⚠️';
+                            const displayText = absValue === 1 ? emoji : `${emoji} x${absValue}`;
+                            
+                            return (
+                              <div 
+                                className="h2h-indicator"
+                                style={{
+                                  position: 'absolute',
+                                  top: '2px',
+                                  left: '2px',
+                                  fontSize: '0.75rem',
+                                  fontWeight: 'bold',
+                                  zIndex: 10,
+                                  lineHeight: 1,
+                                  pointerEvents: 'none',
+                                  textShadow: '0 0 2px white'
+                                }}
+                              >
+                                {displayText}
+                              </div>
+                            );
+                          })()}
+                          {/* Numeric handicap indicator */}
+                          {strokeIndicator && (
+                            <div 
+                              className="handicap-indicator"
+                              style={{
+                                position: 'absolute',
+                                top: '2px',
+                                right: '2px',
+                                fontSize: '0.875rem',
+                                fontWeight: 'bold',
+                                color: strokeIndicator.color,
+                                zIndex: 2,
+                                lineHeight: 1,
+                                pointerEvents: 'none'
+                              }}
+                            >
+                              {strokeIndicator.count}
+                            </div>
+                          )}
+                          {scores[player.id]?.[hole.hole] ? (
+                            <div 
+                              className={`score-display ${getScoreClass(scores[player.id][hole.hole], hole.par)}`}
+                              onClick={() => canEditScore(player.id) && setEditingScoreCell({playerId: player.id, holeNumber: hole.hole})}
+                              style={{cursor: canEditScore(player.id) ? 'pointer' : 'default', opacity: canEditScore(player.id) ? 1 : 0.7}}
+                            >
+                              {scores[player.id][hole.hole]}
+                            </div>
+                          ) : canEditScore(player.id) ? (
+                            <div 
+                              className="score-select"
+                              onClick={() => setEditingScoreCell({playerId: player.id, holeNumber: hole.hole})}
+                              style={{cursor: 'pointer'}}
+                            >
+                              -
+                            </div>
+                          ) : (
+                            <div style={{fontSize: '1rem', color: '#999', textAlign: 'center', width: '100%'}}>-</div>
+                          )}
                         </div>
-                      ) : canEditScore(player.id) ? (
-                        <select
-                          className="score-select"
-                          value=""
-                          onChange={(e) => {
-                            const value = parseInt(e.target.value);
-                            if (value) {
-                              updateScore(player.id, hole.hole, value);
-                            }
-                          }}
-                        >
-                          <option value="">-</option>
-                          {getScoreOptions(hole.par).map(option => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <div style={{fontSize: '1rem', color: '#999', textAlign: 'center', width: '100%'}}>-</div>
-                      )}
-                    </td>
-                  ))}
+                      </td>
+                    );
+                  })}
                 </tr>
               ))}
               {/* Back 9 Total */}
               <tr className="total-row">
                 <td className="hole-par-col-vertical"><strong>10-18</strong></td>
-                {sortedPlayers.map(player => (
-                  <td key={player.id} className="total-cell">
-                    <strong>{calculateBack9(player.id)}</strong>
-                  </td>
-                ))}
+                {sortedPlayers.map((player, index) => {
+                  const scoreTotal = calculateBack9(player.id);
+                  let h2hDisplay = null;
+                  
+                  // Show H2H total for opponents only
+                  if (index > 0 && sortedPlayers.length > 1) {
+                    const viewPlayer = sortedPlayers[0];
+                    const h2hTotal = getH2HTotalForHoles(viewPlayer.id, player.id, 10, 18);
+                    if (h2hTotal !== 0) {
+                      const sign = h2hTotal > 0 ? '+' : '';
+                      h2hDisplay = (
+                        <div style={{
+                          fontSize: '0.85rem',
+                          fontWeight: 'bold',
+                          color: h2hTotal > 0 ? '#4caf50' : '#f44336',
+                          marginTop: '2px'
+                        }}>
+                          ({sign}{h2hTotal})
+                        </div>
+                      );
+                    }
+                  }
+                  
+                  return (
+                    <td key={player.id} className={`total-cell ${index === 0 ? 'focus-player' : ''}`}>
+                      <strong>{scoreTotal}</strong>
+                      {h2hDisplay}
+                    </td>
+                  );
+                })}
               </tr>
               {/* Grand Total */}
               <tr className="total-row final-row">
                 <td className="hole-par-col-vertical"><strong>Total</strong></td>
-                {sortedPlayers.map(player => (
-                  <td key={player.id} className="total-cell final">
-                    <strong>{calculateTotal(player.id)}</strong>
-                  </td>
-                ))}
+                {sortedPlayers.map((player, index) => {
+                  const scoreTotal = calculateTotal(player.id);
+                  let h2hDisplay = null;
+                  
+                  // Show H2H grand total for opponents only
+                  if (index > 0 && sortedPlayers.length > 1) {
+                    const viewPlayer = sortedPlayers[0];
+                    const h2hTotal = getH2HTotalForHoles(viewPlayer.id, player.id, 1, 18);
+                    if (h2hTotal !== 0) {
+                      const sign = h2hTotal > 0 ? '+' : '';
+                      h2hDisplay = (
+                        <div style={{
+                          fontSize: '0.9rem',
+                          fontWeight: 'bold',
+                          color: h2hTotal > 0 ? '#4caf50' : '#f44336',
+                          marginTop: '2px'
+                        }}>
+                          ({sign}{h2hTotal})
+                        </div>
+                      );
+                    }
+                  }
+                  
+                  return (
+                    <td key={player.id} className={`total-cell final ${index === 0 ? 'focus-player' : ''}`}>
+                      <strong>{scoreTotal}</strong>
+                      {h2hDisplay}
+                    </td>
+                  );
+                })}
               </tr>
             </tbody>
           </table>
         </div>
       </div>
+
+      {/* Scoring Config Modal */}
+      <ScoringConfigModal
+        isOpen={showScoringConfigModal}
+        onClose={() => setShowScoringConfigModal(false)}
+        currentConfig={scoringConfig}
+        onSave={handleSaveScoringConfig}
+        isReadOnly={!isHost}
+      />
     </div>
   );
 }

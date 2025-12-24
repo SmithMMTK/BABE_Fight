@@ -1,0 +1,319 @@
+.handicap-config {
+  padding: 0.5rem;
+  max-width: 100%;
+  margin: 0 auto;
+  overflow-x: hidden;
+}
+
+.handicap-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--color-primary);
+}
+
+.handicap-header h1 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--color-primary);
+  flex: 1;
+}
+
+.saving-indicator {
+  color: #666;
+  font-size: 0.75rem;
+  font-style: italic;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+.btn-back {
+  background: transparent;
+  border: 1px solid var(--color-primary);
+  color: var(--color-primary);
+  padding: 0.4rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.btn-back:hover {
+  background: var(--color-primary);
+  color: white;
+}
+
+.handicap-description {
+  background: #f8f9fa;
+  padding: 0.6rem;
+  border-radius: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.handicap-description p {
+  margin: 0.3rem 0;
+  color: var(--color-text);
+  font-size: 0.75rem;
+}
+
+.handicap-description .note {
+  color: #666;
+  font-size: 0.7rem;
+  font-style: italic;
+  margin-top: 0.3rem;
+}
+
+/* Matrix Sections (Front 9 / Back 9) */
+.matrix-section {
+  margin-bottom: 1rem;
+  background: white;
+  border: 2px solid var(--color-primary);
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.matrix-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  color: white;
+  background: var(--color-primary);
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  text-align: center;
+}
+
+.matrix-wrapper {
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Matrix Table */
+.handicap-matrix {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  table-layout: fixed;
+}
+
+.handicap-matrix thead {
+  background: var(--color-primary);
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.handicap-matrix th {
+  padding: 0.4rem 0.2rem;
+  font-weight: 600;
+  font-size: 0.7rem;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.handicap-matrix .corner-cell {
+  background: var(--color-primary);
+  width: 12%;
+}
+
+.handicap-matrix .player-header {
+  background: var(--color-primary);
+  width: 14.6%;
+}
+
+.handicap-matrix .player-row-header {
+  background: #f8f9fa;
+  color: var(--color-text);
+  font-weight: 600;
+  font-size: 0.7rem;
+  text-align: left;
+  padding-left: 0.4rem;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  border-right: 2px solid var(--color-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.handicap-matrix tbody tr {
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.handicap-matrix tbody tr:hover {
+  background: #f8f9fa;
+}
+
+.matrix-cell {
+  padding: 0.15rem;
+  text-align: center;
+  border-right: 1px solid #f0f0f0;
+}
+
+.matrix-select {
+  width: 100%;
+  max-width: 45px;
+  padding: 0.25rem 0.1rem;
+  border: 2px solid #ddd;
+  border-radius: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-align: center;
+  transition: all 0.2s ease;
+  background: white;
+  box-sizing: border-box;
+  cursor: pointer;
+  /* Hide dropdown arrow */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+.matrix-select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(44, 62, 80, 0.1);
+}
+
+.matrix-select.positive {
+  color: #388e3c;
+  border-color: #c8e6c9;
+  background: #e8f5e9;
+}
+
+.matrix-select.negative {
+  color: #d32f2f;
+  border-color: #ffcdd2;
+  background: #ffebee;
+}
+
+.same-player {
+  color: #999;
+  font-size: 1rem;
+  font-weight: 300;
+  user-select: none;
+}
+
+/* Actions */
+.handicap-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 2px solid #f0f0f0;
+}
+
+.btn-save,
+.btn-cancel {
+  padding: 0.75rem 2rem;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  min-width: 120px;
+}
+
+.btn-save {
+  background: var(--color-primary);
+  color: white;
+}
+
+.btn-save:hover:not(:disabled) {
+  background: #34495e;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-cancel {
+  background: #e0e0e0;
+  color: var(--color-text);
+}
+
+.btn-cancel:hover:not(:disabled) {
+  background: #d0d0d0;
+}
+
+.btn-cancel:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.loading {
+  text-align: center;
+  padding: 3rem;
+  font-size: 1.25rem;
+  color: #666;
+}
+
+.error-message {
+  background: #fee;
+  color: #c33;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  border: 1px solid #fcc;
+}
+
+@media (max-width: 768px) {
+  .handicap-config {
+    padding: 0.5rem;
+  }
+
+  .handicap-header {
+    gap: 0.5rem;
+  }
+
+  .handicap-header h1 {
+    font-size: 1.25rem;
+  }
+
+  .btn-back {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.9rem;
+  }
+
+  .matrix-title {
+    font-size: 1.1rem;
+    padding: 0.6rem;
+  }
+
+  .handicap-matrix th {
+    padding: 0.5rem 0.25rem;
+    font-size: 0.8rem;
+  }
+
+  .matrix-input {
+    width: 50px;
+    padding: 0.3rem;
+    font-size: 0.9rem;
+  }
+
+  .handicap-actions {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .btn-save,
+  .btn-cancel {
+    width: 100%;
+    min-width: unset;
+  }
+}

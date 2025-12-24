@@ -1,13 +1,11 @@
-import db from '../db/database.js';
+import db from '../db/database-mssql.js';
 
 export function setupGameSocket(io) {
   io.on('connection', (socket) => {
-    console.log('Client connected:', socket.id);
 
     // Join game room
     socket.on('join-game', (gameId) => {
       socket.join(`game-${gameId}`);
-      console.log(`Socket ${socket.id} joined game-${gameId}`);
       
       // Notify others
       socket.to(`game-${gameId}`).emit('player-joined', {
@@ -58,11 +56,9 @@ export function setupGameSocket(io) {
         holeNumber,
         multiplier
       });
-      console.log(`Turbo updated for game ${gameId}, hole ${holeNumber}: x${multiplier}`);
     });
 
     socket.on('disconnect', () => {
-      console.log('Client disconnected:', socket.id);
     });
   });
 }

@@ -4,10 +4,14 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
 import gamesRouter from './routes/games.js';
 import scoresRouter from './routes/scores.js';
 import versionRouter from './routes/version.js';
 import { setupGameSocket } from './sockets/gameSocket.js';
+
+// Load environment variables
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,6 +29,9 @@ const io = new Server(httpServer, {
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Make io accessible to routes
+app.set('io', io);
 
 // API Routes
 app.use('/api/games', gamesRouter);
@@ -51,7 +58,7 @@ app.get('*', (req, res) => {
 setupGameSocket(io);
 
 const PORT = process.env.PORT || 8080;
+const DB_NAME = process.env.DB_NAME || 'babefightdb';
+
 httpServer.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📱 Access from network: http://<your-ip>:${PORT}`);
 });
