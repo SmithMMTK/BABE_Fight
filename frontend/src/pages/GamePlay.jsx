@@ -29,6 +29,8 @@ function GamePlay() {
   const [lastTapTime, setLastTapTime] = useState({});
   const [lastTapHole, setLastTapHole] = useState(null);
   const [h2hStrokeAllocation, setH2hStrokeAllocation] = useState(null); // H2H handicap matrix from server
+  const [rawH2hMatrix, setRawH2hMatrix] = useState(null); // Raw H2H matrix from database
+  const [h2hReloadTrigger, setH2hReloadTrigger] = useState(0); // Trigger to force H2H reload
 
   // Get session from localStorage or location.state
   const getSession = () => {
@@ -72,6 +74,19 @@ function GamePlay() {
     };
     fetchVersion();
   }, []);
+
+  // Load H2H matrix when course and turboValues are ready, or when trigger changes
+  useEffect(() => {
+    if (course && turboValues && Object.keys(turboValues).length > 0) {
+      console.log('Course and turbo values ready, loading H2H matrix');
+      loadH2HMatrix();
+    } else {
+      console.log('Waiting for dependencies:', { 
+        hasCourse: !!course, 
+        turboValuesLength: Object.keys(turboValues).length 
+      });
+    }
+  }, [course, turboValues, gameId, h2hReloadTrigger]); // Add h2hReloadTrigger
 
   useEffect(() => {
     // Save session to localStorage when component mounts
@@ -128,52 +143,61 @@ function GamePlay() {
       });
       setScores(scoresMap);
 
-      // Load H2H handicap matrix
-      try {
-        const h2hResponse = await api.getHandicapMatrix(gameId);
-        const { handicapMatrix } = h2hResponse.data;
-        const gameResponse = await api.getGame(gameId);
-        const courseResponse = await api.getCourses();
-        const courseData = courseResponse.data.find(c => c.id === gameResponse.data.game.course_id);
-        
-        if (!handicapMatrix || Object.keys(handicapMatrix).length === 0 || !courseData) {
-          console.log('No H2H matrix or course data found');
-          return;
-        }
-        
-        console.log('H2H Matrix from server:', handicapMatrix);
-        
-        // Convert H2H total strokes to per-hole allocation
-        const strokeAlloc = {};
-        const front9Holes = courseData.holes.filter(h => h.hole >= 1 && h.hole <= 9);
-        const back9Holes = courseData.holes.filter(h => h.hole >= 10 && h.hole <= 18);
-        
-        for (const fromPlayerId in handicapMatrix) {
-          strokeAlloc[fromPlayerId] = {};
-          for (const toPlayerId in handicapMatrix[fromPlayerId]) {
-            const front9Total = handicapMatrix[fromPlayerId][toPlayerId].front9 || 0;
-            const back9Total = handicapMatrix[fromPlayerId][toPlayerId].back9 || 0;
-            
-            console.log(`Player ${fromPlayerId} -> ${toPlayerId}: F9=${front9Total}, B9=${back9Total}`);
-            
-            strokeAlloc[fromPlayerId][toPlayerId] = {
-              front9: allocateStrokesFor9Holes(front9Total, front9Holes, turboValues),
-              back9: allocateStrokesFor9Holes(back9Total, back9Holes, turboValues)
-            };
-          }
-        }
-        
-        console.log('Converted H2H stroke allocation:', strokeAlloc);
-        setH2hStrokeAllocation(strokeAlloc);
-      } catch (err) {
-        console.error('Failed to load H2H matrix:', err);
-      }
-
       setLoading(false);
     } catch (err) {
       console.error('Failed to load game:', err);
       setError('ไม่สามารถโหลดข้อมูลเกมได้');
       setLoading(false);
+    }
+  };
+
+  const loadH2HMatrix = async () => {
+    try {
+      // Need course data and turboValues to calculate allocation
+      if (!course || !turboValues) {
+        console.log('Waiting for course and turboValues before loading H2H matrix');
+        return;
+      }
+
+      const h2hResponse = await api.getHandicapMatrix(gameId);
+      const { handicapMatrix } = h2hResponse.data;
+      
+      if (!handicapMatrix || Object.keys(handicapMatrix).length === 0) {
+        console.log('No H2H matrix found');
+        setRawH2hMatrix(null);
+        setH2hStrokeAllocation(null);
+        return;
+      }
+      
+      console.log('H2H Matrix from server:', handicapMatrix);
+      setRawH2hMatrix(handicapMatrix);
+      
+      // Convert H2H total strokes to per-hole allocation
+      const strokeAlloc = {};
+      const front9Holes = course.holes.filter(h => h.hole >= 1 && h.hole <= 9);
+      const back9Holes = course.holes.filter(h => h.hole >= 10 && h.hole <= 18);
+      
+      for (const fromPlayerId in handicapMatrix) {
+        strokeAlloc[fromPlayerId] = {};
+        for (const toPlayerId in handicapMatrix[fromPlayerId]) {
+          const front9Total = handicapMatrix[fromPlayerId][toPlayerId].front9 || 0;
+          const back9Total = handicapMatrix[fromPlayerId][toPlayerId].back9 || 0;
+          
+          console.log(`Player ${fromPlayerId} -> ${toPlayerId}: F9=${front9Total}, B9=${back9Total}`);
+          
+          strokeAlloc[fromPlayerId][toPlayerId] = {
+            front9: allocateStrokesFor9Holes(front9Total, front9Holes, turboValues),
+            back9: allocateStrokesFor9Holes(back9Total, back9Holes, turboValues)
+          };
+        }
+      }
+      
+      console.log('Converted H2H stroke allocation:', strokeAlloc);
+      setH2hStrokeAllocation(strokeAlloc);
+    } catch (err) {
+      console.error('Failed to load H2H matrix:', err);
+      setRawH2hMatrix(null);
+      setH2hStrokeAllocation(null);
     }
   };
 
@@ -297,10 +321,16 @@ function GamePlay() {
       if (prev.some(p => p.id === player.id)) return prev;
       return [...prev, player];
     });
+    // Trigger H2H matrix reload when new player joins
+    console.log('Player added, triggering H2H reload');
+    setH2hReloadTrigger(prev => prev + 1);
   };
 
   const handlePlayerRemoved = (playerId) => {
     setPlayers(prev => prev.filter(p => p.id !== playerId));
+    // Trigger H2H matrix reload when player leaves
+    console.log('Player removed, triggering H2H reload');
+    setH2hReloadTrigger(prev => prev + 1);
   };
 
   // Player management functions

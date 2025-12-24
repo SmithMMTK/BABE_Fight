@@ -39,7 +39,7 @@ echo "3. Updating Container App..."
 az containerapp update \
   --name $APP_NAME \
   --resource-group $RG_NAME \
-  --image ${ACR_NAME}.azurecr.io/babe-fight:latest
+  --image ${ACR_NAME}.azurecr.io/babe-fight:${VERSION}
 
 # 4. Get app URL
 APP_URL=$(az containerapp show \

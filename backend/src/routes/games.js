@@ -301,9 +301,10 @@ router.post('/:gameId/players', async (req, res) => {
 // Remove player (Host only)
 router.delete('/:gameId/players/:playerId', async (req, res) => {
   try {
-    const { playerId } = req.params;
+    const { gameId, playerId } = req.params;
 
     await db.run('DELETE FROM players WHERE id = ?', [playerId]);
+    
     res.json({ success: true });
   } catch (error) {
     console.error('Remove player error:', error);
