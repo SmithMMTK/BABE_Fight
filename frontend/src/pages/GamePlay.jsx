@@ -545,6 +545,142 @@ function GamePlay() {
     return playerId === currentPlayerId; // GUEST can only edit their own score
   };
 
+  // Function to calculate H2H indicator for a specific hole
+  const getH2HIndicator = (viewPlayerId, opponentId, holeNumber) => {
+    // Need all required data
+    if (!course || !scoringConfig || !scores[viewPlayerId] || !scores[opponentId]) {
+      return null;
+    }
+
+    const hole = course.holes.find(h => h.hole === holeNumber);
+    if (!hole) return null;
+
+    const playerScore = scores[viewPlayerId][holeNumber];
+    const opponentScore = scores[opponentId][holeNumber];
+
+    // Both scores must exist
+    if (!playerScore || !opponentScore) return null;
+
+    // Get handicap for this hole
+    const handicapDisplay = getStrokeDisplay(strokeAllocation, viewPlayerId, opponentId, holeNumber);
+    let hc = { type: 'None', value: 0 };
+    if (handicapDisplay.count > 0) {
+      hc = { type: `Get${handicapDisplay.count}`, value: handicapDisplay.count };
+    } else if (handicapDisplay.count < 0) {
+      hc = { type: `Give${Math.abs(handicapDisplay.count)}`, value: Math.abs(handicapDisplay.count) };
+    }
+
+    // Calculate net scores
+    let playerNet = playerScore;
+    let opponentNet = opponentScore;
+    
+    if (hc.type.startsWith('Get')) {
+      playerNet = playerScore - hc.value;
+    } else if (hc.type.startsWith('Give')) {
+      opponentNet = opponentScore - hc.value;
+    }
+
+    // Determine result
+    let result;
+    if (playerNet < opponentNet) {
+      result = 'WIN';
+    } else if (playerNet > opponentNet) {
+      result = 'LOSE';
+    } else {
+      result = 'TIE';
+    }
+
+    // Determine ScoreType
+    let grossToEvaluate;
+    if (result === 'WIN') {
+      grossToEvaluate = playerScore;
+    } else if (result === 'LOSE') {
+      grossToEvaluate = opponentScore;
+    } else {
+      grossToEvaluate = playerScore;
+    }
+
+    const par = hole.par;
+    let scoreType;
+    if (par === 3 && grossToEvaluate === 1) {
+      scoreType = 'HIO';
+    } else if (grossToEvaluate <= par - 2) {
+      scoreType = 'Eagle';
+    } else if (grossToEvaluate === par - 1) {
+      scoreType = 'Birdie';
+    } else {
+      scoreType = 'Par';
+    }
+
+    // Get BasePoint
+    let basePoint;
+    if (scoreType === 'HIO') {
+      basePoint = scoringConfig.holeInOne || scoringConfig.HIO || 10;
+    } else if (scoreType === 'Eagle') {
+      basePoint = scoringConfig.eagle || scoringConfig.Eagle || 5;
+    } else if (scoreType === 'Birdie') {
+      basePoint = scoringConfig.birdie || scoringConfig.Birdie || 2;
+    } else {
+      basePoint = scoringConfig.parOrWorse || scoringConfig.Par || 1;
+    }
+
+    // Get turbo
+    const turbo = turboValues[holeNumber] || 1;
+    const holePoint = basePoint * turbo;
+
+    // Calculate PlayerDelta
+    let playerDelta = 0;
+    if (result === 'WIN') {
+      playerDelta = holePoint;
+    } else if (result === 'LOSE') {
+      playerDelta = -holePoint;
+    } else if (result === 'TIE') {
+      // Check if opponent shot under par (penalty)
+      if (opponentScore < par) {
+        let opponentScoreType;
+        if (par === 3 && opponentScore === 1) {
+          opponentScoreType = 'HIO';
+        } else if (opponentScore <= par - 2) {
+          opponentScoreType = 'Eagle';
+        } else if (opponentScore === par - 1) {
+          opponentScoreType = 'Birdie';
+        }
+        
+        let penaltyBasePoint;
+        if (opponentScoreType === 'HIO') {
+          penaltyBasePoint = scoringConfig.holeInOne || scoringConfig.HIO || 10;
+        } else if (opponentScoreType === 'Eagle') {
+          penaltyBasePoint = scoringConfig.eagle || scoringConfig.Eagle || 5;
+        } else if (opponentScoreType === 'Birdie') {
+          penaltyBasePoint = scoringConfig.birdie || scoringConfig.Birdie || 2;
+        }
+        
+        const penaltyHolePoint = penaltyBasePoint * turbo;
+        const parPoints = scoringConfig.parOrWorse || scoringConfig.Par || 1;
+        const parHolePoint = parPoints * turbo;
+        playerDelta = -(penaltyHolePoint - parHolePoint);
+      } else if (hc.type !== 'None' && playerScore < par) {
+        // Normal TIE bonus
+        const parPoints = scoringConfig.parOrWorse || scoringConfig.Par || 1;
+        playerDelta = (basePoint - parPoints) * turbo;
+      }
+    }
+
+    return playerDelta;
+  };
+
+  // Function to calculate H2H total for a range of holes
+  const getH2HTotalForHoles = (viewPlayerId, opponentId, startHole, endHole) => {
+    let total = 0;
+    for (let h = startHole; h <= endHole; h++) {
+      const delta = getH2HIndicator(viewPlayerId, opponentId, h);
+      if (delta) {
+        total += delta;
+      }
+    }
+    return total;
+  };
+
   return (
     <div className="container gameplay-container">
       <div className="game-header">
@@ -926,6 +1062,35 @@ function GamePlay() {
                     return (
                       <td key={player.id} className={`score-cell-vertical ${index === 0 ? 'focus-player' : ''}`}>
                         <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'visible' }}>
+                          {/* H2H Indicator (top-left) - show on opponent columns */}
+                          {index > 0 && sortedPlayers.length > 1 && (() => {
+                            const viewPlayer = sortedPlayers[0];
+                            const delta = getH2HIndicator(viewPlayer.id, player.id, hole.hole);
+                            if (!delta || delta === 0) return null;
+                            
+                            const absValue = Math.abs(delta);
+                            const emoji = delta > 0 ? '🎯' : '⚠️';
+                            const displayText = absValue === 1 ? emoji : `${emoji} x${absValue}`;
+                            
+                            return (
+                              <div 
+                                className="h2h-indicator"
+                                style={{
+                                  position: 'absolute',
+                                  top: '2px',
+                                  left: '2px',
+                                  fontSize: '0.75rem',
+                                  fontWeight: 'bold',
+                                  zIndex: 10,
+                                  lineHeight: 1,
+                                  pointerEvents: 'none',
+                                  textShadow: '0 0 2px white'
+                                }}
+                              >
+                                {displayText}
+                              </div>
+                            );
+                          })()}
                           {/* Numeric handicap indicator */}
                           {strokeIndicator && (
                             <div 
@@ -973,11 +1138,36 @@ function GamePlay() {
               {/* Front 9 Total */}
               <tr className="total-row">
                 <td className="hole-par-col-vertical"><strong>1-9</strong></td>
-                {sortedPlayers.map((player, index) => (
-                  <td key={player.id} className={`total-cell ${index === 0 ? 'focus-player' : ''}`}>
-                    <strong>{calculateFront9(player.id)}</strong>
-                  </td>
-                ))}
+                {sortedPlayers.map((player, index) => {
+                  const scoreTotal = calculateFront9(player.id);
+                  let h2hDisplay = null;
+                  
+                  // Show H2H total for opponents only
+                  if (index > 0 && sortedPlayers.length > 1) {
+                    const viewPlayer = sortedPlayers[0];
+                    const h2hTotal = getH2HTotalForHoles(viewPlayer.id, player.id, 1, 9);
+                    if (h2hTotal !== 0) {
+                      const sign = h2hTotal > 0 ? '+' : '';
+                      h2hDisplay = (
+                        <div style={{
+                          fontSize: '0.85rem',
+                          fontWeight: 'bold',
+                          color: h2hTotal > 0 ? '#4caf50' : '#f44336',
+                          marginTop: '2px'
+                        }}>
+                          ({sign}{h2hTotal})
+                        </div>
+                      );
+                    }
+                  }
+                  
+                  return (
+                    <td key={player.id} className={`total-cell ${index === 0 ? 'focus-player' : ''}`}>
+                      <strong>{scoreTotal}</strong>
+                      {h2hDisplay}
+                    </td>
+                  );
+                })}
               </tr>
             </tbody>
           </table>
@@ -1092,6 +1282,35 @@ function GamePlay() {
                     return (
                       <td key={player.id} className={`score-cell-vertical ${index === 0 ? 'focus-player' : ''}`}>
                         <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'visible' }}>
+                          {/* H2H Indicator (top-left) - show on opponent columns */}
+                          {index > 0 && sortedPlayers.length > 1 && (() => {
+                            const viewPlayer = sortedPlayers[0];
+                            const delta = getH2HIndicator(viewPlayer.id, player.id, hole.hole);
+                            if (!delta || delta === 0) return null;
+                            
+                            const absValue = Math.abs(delta);
+                            const emoji = delta > 0 ? '🎯' : '⚠️';
+                            const displayText = absValue === 1 ? emoji : `${emoji} x${absValue}`;
+                            
+                            return (
+                              <div 
+                                className="h2h-indicator"
+                                style={{
+                                  position: 'absolute',
+                                  top: '2px',
+                                  left: '2px',
+                                  fontSize: '0.75rem',
+                                  fontWeight: 'bold',
+                                  zIndex: 10,
+                                  lineHeight: 1,
+                                  pointerEvents: 'none',
+                                  textShadow: '0 0 2px white'
+                                }}
+                              >
+                                {displayText}
+                              </div>
+                            );
+                          })()}
                           {/* Numeric handicap indicator */}
                           {strokeIndicator && (
                             <div 
@@ -1139,20 +1358,70 @@ function GamePlay() {
               {/* Back 9 Total */}
               <tr className="total-row">
                 <td className="hole-par-col-vertical"><strong>10-18</strong></td>
-                {sortedPlayers.map((player, index) => (
-                  <td key={player.id} className={`total-cell ${index === 0 ? 'focus-player' : ''}`}>
-                    <strong>{calculateBack9(player.id)}</strong>
-                  </td>
-                ))}
+                {sortedPlayers.map((player, index) => {
+                  const scoreTotal = calculateBack9(player.id);
+                  let h2hDisplay = null;
+                  
+                  // Show H2H total for opponents only
+                  if (index > 0 && sortedPlayers.length > 1) {
+                    const viewPlayer = sortedPlayers[0];
+                    const h2hTotal = getH2HTotalForHoles(viewPlayer.id, player.id, 10, 18);
+                    if (h2hTotal !== 0) {
+                      const sign = h2hTotal > 0 ? '+' : '';
+                      h2hDisplay = (
+                        <div style={{
+                          fontSize: '0.85rem',
+                          fontWeight: 'bold',
+                          color: h2hTotal > 0 ? '#4caf50' : '#f44336',
+                          marginTop: '2px'
+                        }}>
+                          ({sign}{h2hTotal})
+                        </div>
+                      );
+                    }
+                  }
+                  
+                  return (
+                    <td key={player.id} className={`total-cell ${index === 0 ? 'focus-player' : ''}`}>
+                      <strong>{scoreTotal}</strong>
+                      {h2hDisplay}
+                    </td>
+                  );
+                })}
               </tr>
               {/* Grand Total */}
               <tr className="total-row final-row">
                 <td className="hole-par-col-vertical"><strong>Total</strong></td>
-                {sortedPlayers.map((player, index) => (
-                  <td key={player.id} className={`total-cell final ${index === 0 ? 'focus-player' : ''}`}>
-                    <strong>{calculateTotal(player.id)}</strong>
-                  </td>
-                ))}
+                {sortedPlayers.map((player, index) => {
+                  const scoreTotal = calculateTotal(player.id);
+                  let h2hDisplay = null;
+                  
+                  // Show H2H grand total for opponents only
+                  if (index > 0 && sortedPlayers.length > 1) {
+                    const viewPlayer = sortedPlayers[0];
+                    const h2hTotal = getH2HTotalForHoles(viewPlayer.id, player.id, 1, 18);
+                    if (h2hTotal !== 0) {
+                      const sign = h2hTotal > 0 ? '+' : '';
+                      h2hDisplay = (
+                        <div style={{
+                          fontSize: '0.9rem',
+                          fontWeight: 'bold',
+                          color: h2hTotal > 0 ? '#4caf50' : '#f44336',
+                          marginTop: '2px'
+                        }}>
+                          ({sign}{h2hTotal})
+                        </div>
+                      );
+                    }
+                  }
+                  
+                  return (
+                    <td key={player.id} className={`total-cell final ${index === 0 ? 'focus-player' : ''}`}>
+                      <strong>{scoreTotal}</strong>
+                      {h2hDisplay}
+                    </td>
+                  );
+                })}
               </tr>
             </tbody>
           </table>
