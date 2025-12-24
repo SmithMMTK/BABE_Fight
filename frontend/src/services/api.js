@@ -43,6 +43,10 @@ export const api = {
   updateHandicapMatrix: (gameId, matrix) => axios.post(`${API_URL}/games/${gameId}/handicap-matrix`, { handicapMatrix: matrix }),
   updatePlayerHandicap: (gameId, playerId, handicap) => axios.post(`${API_URL}/games/${gameId}/players/${playerId}/handicap`, { handicap }),
   
+  // Scoring Configuration
+  getScoringConfig: (gameId) => axios.get(`${API_URL}/games/${gameId}/scoring-config`),
+  updateScoringConfig: (gameId, config, playerId) => axios.put(`${API_URL}/games/${gameId}/scoring-config`, { ...config, playerId }),
+  
   // Version
   getVersion: () => axios.get(`${API_URL}/version`)
 };

@@ -3,6 +3,7 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 import { api } from '../services/api';
 import PlayersMenu from '../components/PlayersMenu';
+import ScoringConfigModal from '../components/ScoringConfigModal';
 import { calculateStrokeAllocation, getStrokeDisplay, allocateStrokesFor9Holes } from '../utils/strokeAllocation';
 import './GamePlay.css';
 
@@ -31,6 +32,8 @@ function GamePlay() {
   const [h2hStrokeAllocation, setH2hStrokeAllocation] = useState(null); // H2H handicap matrix from server
   const [rawH2hMatrix, setRawH2hMatrix] = useState(null); // Raw H2H matrix from database
   const [h2hReloadTrigger, setH2hReloadTrigger] = useState(0); // Trigger to force H2H reload
+  const [scoringConfig, setScoringConfig] = useState(null); // H2H scoring configuration (hole-in-one, eagle, birdie, par or worse)
+  const [showScoringConfigModal, setShowScoringConfigModal] = useState(false);
 
   // Get session from localStorage or location.state
   const getSession = () => {
@@ -101,6 +104,7 @@ function GamePlay() {
 
     loadGameData();
     loadCourse();
+    loadScoringConfig();
 
     if (socket) {
       socket.emit('join-game', gameId);
@@ -111,6 +115,7 @@ function GamePlay() {
       socket.on('turbo-updated', handleTurboUpdate);
       socket.on('player-added', handlePlayerAdded);
       socket.on('player-removed', handlePlayerRemoved);
+      socket.on('scoring-config-updated', handleScoringConfigUpdate);
 
       return () => {
         socket.off('score-updated', handleScoreUpdate);
@@ -119,6 +124,7 @@ function GamePlay() {
         socket.off('turbo-updated', handleTurboUpdate);
         socket.off('player-added', handlePlayerAdded);
         socket.off('player-removed', handlePlayerRemoved);
+        socket.off('scoring-config-updated', handleScoringConfigUpdate);
       };
     }
   }, [socket, gameId]);
@@ -198,6 +204,18 @@ function GamePlay() {
       console.error('Failed to load H2H matrix:', err);
       setRawH2hMatrix(null);
       setH2hStrokeAllocation(null);
+    }
+  };
+
+  const loadScoringConfig = async () => {
+    try {
+      const response = await api.getScoringConfig(gameId);
+      console.log('Loaded scoring config:', response.data);
+      setScoringConfig(response.data);
+    } catch (err) {
+      console.error('Failed to load scoring config:', err);
+      // Set default values if loading fails
+      setScoringConfig({ holeInOne: 10, eagle: 5, birdie: 2, parOrWorse: 1 });
     }
   };
 
@@ -333,6 +351,11 @@ function GamePlay() {
     setH2hReloadTrigger(prev => prev + 1);
   };
 
+  const handleScoringConfigUpdate = (config) => {
+    console.log('Scoring config updated:', config);
+    setScoringConfig(config);
+  };
+
   // Player management functions
   const handleAddPlayer = async (username, role) => {
     try {
@@ -406,6 +429,17 @@ function GamePlay() {
     localStorage.removeItem(`game_session_${gameId}`);
     // Navigate to home
     navigate('/');
+  };
+
+  const handleSaveScoringConfig = async (config) => {
+    try {
+      await api.updateScoringConfig(gameId, config, currentPlayerId);
+      console.log('Scoring config saved successfully');
+      setScoringConfig(config);
+    } catch (err) {
+      console.error('Failed to save scoring config:', err);
+      throw err; // Re-throw for modal to handle
+    }
   };
 
   const updateScore = async (playerId, holeNumber, score) => {
@@ -673,6 +707,10 @@ function GamePlay() {
             onRemovePlayer={handleRemovePlayer}
             onToggleRole={handleToggleRole}
             onUpdateUsername={handleUpdateUsername}
+            onOpenScoringConfig={() => {
+              setShowPlayersMenu(false);
+              setShowScoringConfigModal(true);
+            }}
             onClose={() => setShowPlayersMenu(false)}
           />
         )}
@@ -1045,6 +1083,14 @@ function GamePlay() {
           </table>
         </div>
       </div>
+
+      {/* Scoring Config Modal */}
+      <ScoringConfigModal
+        isOpen={showScoringConfigModal}
+        onClose={() => setShowScoringConfigModal(false)}
+        currentConfig={scoringConfig}
+        onSave={handleSaveScoringConfig}
+      />
     </div>
   );
 }

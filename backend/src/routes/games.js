@@ -441,4 +441,123 @@ router.post('/:gameId/players/:playerId/handicap', async (req, res) => {
   }
 });
 
+// Load default scoring config
+const defaultScoringConfigPath = join(__dirname, '../../../Resources/h2h-scoring-config.json');
+let defaultScoringConfig = { holeInOne: 10, eagle: 5, birdie: 2, parOrWorse: 1 };
+try {
+  defaultScoringConfig = JSON.parse(fs.readFileSync(defaultScoringConfigPath, 'utf8'));
+} catch (err) {
+  console.warn('Failed to load default scoring config, using hardcoded defaults');
+}
+
+// GET /games/:gameId/scoring-config - Get H2H scoring configuration
+router.get('/:gameId/scoring-config', async (req, res) => {
+  try {
+    const { gameId } = req.params;
+
+    // Check if game exists
+    const game = await db.get('SELECT * FROM games WHERE id = ?', [gameId]);
+    if (!game) {
+      return res.status(404).json({ error: 'Game not found' });
+    }
+
+    // Get scoring config from database
+    const config = await db.get(
+      'SELECT hole_in_one, eagle, birdie, par_or_worse FROM game_scoring_config WHERE game_id = ?',
+      [gameId]
+    );
+
+    if (config) {
+      // Return existing config
+      res.json({
+        holeInOne: config.hole_in_one,
+        eagle: config.eagle,
+        birdie: config.birdie,
+        parOrWorse: config.par_or_worse
+      });
+    } else {
+      // Return default config and create entry in database
+      await db.run(
+        'INSERT INTO game_scoring_config (game_id, hole_in_one, eagle, birdie, par_or_worse) VALUES (?, ?, ?, ?, ?)',
+        [gameId, defaultScoringConfig.holeInOne, defaultScoringConfig.eagle, defaultScoringConfig.birdie, defaultScoringConfig.parOrWorse]
+      );
+      
+      res.json(defaultScoringConfig);
+    }
+  } catch (error) {
+    console.error('Get scoring config error:', error);
+    res.status(500).json({ error: 'Failed to get scoring configuration' });
+  }
+});
+
+// PUT /games/:gameId/scoring-config - Update H2H scoring configuration (Host only)
+router.put('/:gameId/scoring-config', async (req, res) => {
+  try {
+    const { gameId } = req.params;
+    const { holeInOne, eagle, birdie, parOrWorse, playerId } = req.body;
+
+    // Validate required fields
+    if (holeInOne === undefined || eagle === undefined || birdie === undefined || parOrWorse === undefined || !playerId) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Validate that values are positive integers
+    if (holeInOne < 0 || eagle < 0 || birdie < 0 || parOrWorse < 0) {
+      return res.status(400).json({ error: 'All values must be positive integers' });
+    }
+
+    // Check if game exists
+    const game = await db.get('SELECT * FROM games WHERE id = ?', [gameId]);
+    if (!game) {
+      return res.status(404).json({ error: 'Game not found' });
+    }
+
+    // Verify player is the host
+    const player = await db.get(
+      'SELECT * FROM players WHERE id = ? AND game_id = ? AND role = ?',
+      [playerId, gameId, 'host']
+    );
+
+    if (!player) {
+      return res.status(403).json({ error: 'Only the host can update scoring configuration' });
+    }
+
+    // Update or insert scoring config
+    const existingConfig = await db.get(
+      'SELECT * FROM game_scoring_config WHERE game_id = ?',
+      [gameId]
+    );
+
+    if (existingConfig) {
+      await db.run(
+        'UPDATE game_scoring_config SET hole_in_one = ?, eagle = ?, birdie = ?, par_or_worse = ?, updated_at = GETDATE() WHERE game_id = ?',
+        [holeInOne, eagle, birdie, parOrWorse, gameId]
+      );
+    } else {
+      await db.run(
+        'INSERT INTO game_scoring_config (game_id, hole_in_one, eagle, birdie, par_or_worse) VALUES (?, ?, ?, ?, ?)',
+        [gameId, holeInOne, eagle, birdie, parOrWorse]
+      );
+    }
+
+    const updatedConfig = {
+      holeInOne,
+      eagle,
+      birdie,
+      parOrWorse
+    };
+
+    // Broadcast update to all players in the game via Socket.IO
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`game-${gameId}`).emit('scoring-config-updated', updatedConfig);
+    }
+
+    res.json({ success: true, config: updatedConfig });
+  } catch (error) {
+    console.error('Update scoring config error:', error);
+    res.status(500).json({ error: 'Failed to update scoring configuration' });
+  }
+});
+
 export default router;

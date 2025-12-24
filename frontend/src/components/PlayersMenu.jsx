@@ -11,6 +11,7 @@ function PlayersMenu({
   onRemovePlayer,
   onToggleRole,
   onUpdateUsername,
+  onOpenScoringConfig,
   onClose
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -210,6 +211,22 @@ function PlayersMenu({
               </div>
             ))}
           </div>
+
+          {/* Host-only Settings Section */}
+          {isCurrentPlayerHost && (
+            <div className="host-settings-section">
+              <h4>การตั้งค่า (Host Only)</h4>
+              <button 
+                className="btn-setting"
+                onClick={onOpenScoringConfig}
+                title="กำหนดคะแนนสำหรับการชนะแต่ละหลุม"
+              >
+                <span className="setting-icon">🎯</span>
+                <span className="setting-label">H2H Scoring Config</span>
+                <span className="setting-arrow">›</span>
+              </button>
+            </div>
+          )}
       </div>
     </div>
   );
