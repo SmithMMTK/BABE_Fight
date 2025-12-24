@@ -1070,7 +1070,7 @@ function GamePlay() {
                             
                             const absValue = Math.abs(delta);
                             const emoji = delta > 0 ? '🎯' : '⚠️';
-                            const displayText = absValue === 1 ? emoji : `${emoji} x${absValue}`;
+                            const displayText = emoji.repeat(absValue);
                             
                             return (
                               <div 
@@ -1290,7 +1290,7 @@ function GamePlay() {
                             
                             const absValue = Math.abs(delta);
                             const emoji = delta > 0 ? '🎯' : '⚠️';
-                            const displayText = absValue === 1 ? emoji : `${emoji} x${absValue}`;
+                            const displayText = emoji.repeat(absValue);
                             
                             return (
                               <div 
