@@ -7,6 +7,7 @@ function ScoringConfigModal({ isOpen, onClose, currentConfig, onSave, isReadOnly
   const [birdie, setBirdie] = useState(2);
   const [parOrWorse, setParOrWorse] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
 
   useEffect(() => {
     if (currentConfig) {
@@ -14,8 +15,21 @@ function ScoringConfigModal({ isOpen, onClose, currentConfig, onSave, isReadOnly
       setEagle(currentConfig.eagle || 5);
       setBirdie(currentConfig.birdie || 2);
       setParOrWorse(currentConfig.parOrWorse || 1);
+      setHasChanges(false); // Reset change tracking when config loads
     }
   }, [currentConfig]);
+
+  // Track changes
+  useEffect(() => {
+    if (currentConfig) {
+      const changed = 
+        parseInt(holeInOne) !== (currentConfig.holeInOne || 10) ||
+        parseInt(eagle) !== (currentConfig.eagle || 5) ||
+        parseInt(birdie) !== (currentConfig.birdie || 2) ||
+        parseInt(parOrWorse) !== (currentConfig.parOrWorse || 1);
+      setHasChanges(changed);
+    }
+  }, [holeInOne, eagle, birdie, parOrWorse, currentConfig]);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -26,12 +40,23 @@ function ScoringConfigModal({ isOpen, onClose, currentConfig, onSave, isReadOnly
         birdie: parseInt(birdie),
         parOrWorse: parseInt(parOrWorse)
       });
+      setHasChanges(false);
       onClose();
     } catch (error) {
       console.error('Failed to save scoring config:', error);
       alert('ไม่สามารถบันทึกการตั้งค่าได้');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleClose = async () => {
+    // Auto-save if there are unsaved changes and not read-only
+    if (hasChanges && !isReadOnly) {
+      console.log('[Modal] Auto-saving changes before close');
+      await handleSave();
+    } else {
+      onClose();
     }
   };
 
@@ -45,11 +70,11 @@ function ScoringConfigModal({ isOpen, onClose, currentConfig, onSave, isReadOnly
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={handleClose}>
       <div className="modal-content scoring-config-modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h2>H2H Scoring Configuration {isReadOnly && '(ดูอย่างเดียว)'}</h2>
-          <button className="close-button" onClick={onClose}>×</button>
+          <button className="close-button" onClick={handleClose}>×</button>
         </div>
         
         <div className="modal-body">
@@ -141,24 +166,26 @@ function ScoringConfigModal({ isOpen, onClose, currentConfig, onSave, isReadOnly
               <div className="footer-right">
                 <button 
                   className="button-secondary" 
-                  onClick={onClose}
+                  onClick={handleClose}
                   disabled={isSaving}
                 >
-                  ยกเลิก
+                  {hasChanges ? 'บันทึกและปิด' : 'ปิด'}
                 </button>
-                <button 
-                  className="button-primary" 
-                  onClick={handleSave}
-                  disabled={isSaving}
-                >
-                  {isSaving ? 'กำลังบันทึก...' : 'บันทึก'}
-                </button>
+                {hasChanges && (
+                  <button 
+                    className="button-primary" 
+                    onClick={handleSave}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? 'กำลังบันทึก...' : 'บันทึกทันที'}
+                  </button>
+                )}
               </div>
             </>
           ) : (
             <button 
               className="button-primary" 
-              onClick={onClose}
+              onClick={handleClose}
               style={{ marginLeft: 'auto' }}
             >
               ปิด
