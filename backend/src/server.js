@@ -30,6 +30,9 @@ const io = new Server(httpServer, {
 app.use(cors());
 app.use(express.json());
 
+// Make io accessible to routes
+app.set('io', io);
+
 // API Routes
 app.use('/api/games', gamesRouter);
 app.use('/api/scores', scoresRouter);

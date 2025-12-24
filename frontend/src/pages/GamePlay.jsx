@@ -78,6 +78,14 @@ function GamePlay() {
     fetchVersion();
   }, []);
 
+  // Reload scoring config when modal opens
+  useEffect(() => {
+    if (showScoringConfigModal) {
+      console.log('[Modal] Opening - reloading scoring config');
+      loadScoringConfig();
+    }
+  }, [showScoringConfigModal]);
+
   // Load H2H matrix when course and turboValues are ready, or when trigger changes
   useEffect(() => {
     if (course && turboValues && Object.keys(turboValues).length > 0) {
@@ -209,11 +217,12 @@ function GamePlay() {
 
   const loadScoringConfig = async () => {
     try {
+      console.log('[Scoring Config] Loading from API for game:', gameId);
       const response = await api.getScoringConfig(gameId);
-      console.log('Loaded scoring config:', response.data);
+      console.log('[Scoring Config] Loaded:', response.data);
       setScoringConfig(response.data);
     } catch (err) {
-      console.error('Failed to load scoring config:', err);
+      console.error('[Scoring Config] Failed to load:', err);
       // Set default values if loading fails
       setScoringConfig({ holeInOne: 10, eagle: 5, birdie: 2, parOrWorse: 1 });
     }
@@ -352,8 +361,11 @@ function GamePlay() {
   };
 
   const handleScoringConfigUpdate = (config) => {
-    console.log('Scoring config updated:', config);
+    console.log('[Socket] Scoring config updated received:', config);
+    console.log('[Socket] Current player:', currentPlayerId, 'isHost:', isHost);
     setScoringConfig(config);
+    // Force reload from API to ensure consistency
+    setTimeout(() => loadScoringConfig(), 500);
   };
 
   // Player management functions

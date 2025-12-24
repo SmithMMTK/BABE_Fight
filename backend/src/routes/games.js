@@ -549,8 +549,13 @@ router.put('/:gameId/scoring-config', async (req, res) => {
 
     // Broadcast update to all players in the game via Socket.IO
     const io = req.app.get('io');
+    console.log('[Scoring Config] Broadcasting to game-' + gameId, updatedConfig);
+    console.log('[Scoring Config] IO exists?', !!io);
     if (io) {
       io.to(`game-${gameId}`).emit('scoring-config-updated', updatedConfig);
+      console.log('[Scoring Config] Broadcast sent successfully');
+    } else {
+      console.error('[Scoring Config] IO not found! Cannot broadcast');
     }
 
     res.json({ success: true, config: updatedConfig });
