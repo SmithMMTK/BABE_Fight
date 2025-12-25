@@ -136,11 +136,13 @@ HolePoint = BasePoint * Turbo
 WIN  => +HolePoint
 LOSE => -HolePoint
 TIE:
-- HC:None => 0
-- HC:Give or HC:Get:
-  If PlayerGross < Par:
-  (H2HConfig[ScoreType] - H2HConfig["Par"]) * Turbo
-  Else => 0
+- If OpponentGross < Par (opponent shot under par):
+  Calculate penalty based on opponent's score type:
+  - Determine OpponentScoreType (HIO/Eagle/Birdie)
+  - PenaltyBasePoint = H2HConfig[OpponentScoreType]
+  - ParBasePoint = H2HConfig["Par"]
+  - PlayerDelta = -(PenaltyBasePoint - ParBasePoint) * Turbo
+- Else => 0
 
 ---
 
