@@ -96,7 +96,7 @@ socket.on('scoring-config-updated', (config) => {
 - [ ] Open hamburger menu as Host
 - [ ] "H2H Scoring Config" menu item visible
 - [ ] Click opens modal with current values
-- [ ] Modal shows emoji icons (🎯🦅🐦⛳)
+- [ ] Modal shows input fields for: Hole-in-One, Eagle, Birdie, Par or Worse
 
 ### Guest Access
 - [ ] Open hamburger menu as Guest
