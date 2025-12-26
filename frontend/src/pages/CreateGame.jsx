@@ -12,8 +12,7 @@ function CreateGame() {
   const [formData, setFormData] = useState({
     courseId: '',
     courseName: '',
-    hostUsername: '',
-    hostHandicap: 0
+    hostUsername: ''
   });
 
   useEffect(() => {
@@ -115,21 +114,6 @@ function CreateGame() {
                 required
                 maxLength={50}
               />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Handicap ของคุณ</label>
-              <input
-                type="number"
-                className="form-control"
-                placeholder="0-54"
-                value={formData.hostHandicap}
-                onChange={(e) => setFormData({...formData, hostHandicap: parseInt(e.target.value) || 0})}
-                min="0"
-                max="54"
-                required
-              />
-              <small style={{color: '#666', fontSize: '0.85rem'}}>ใส่ 0 ถ้าไม่มี handicap</small>
             </div>
 
             <button type="submit" className="btn btn-success btn-block">

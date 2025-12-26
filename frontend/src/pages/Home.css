@@ -64,25 +64,40 @@
 }
 
 @media (max-width: 768px) {
+  .home-wrapper {
+    margin: 1.5rem auto;
+  }
+
   .home-wrapper h1 {
-    font-size: 2.5rem;
+    font-size: 2rem;
   }
 
   .subtitle {
-    font-size: 1.25rem;
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
   }
 
   .choice-container {
     grid-template-columns: 1fr;
-    gap: 1.5rem;
+    gap: 1rem;
   }
 
   .choice-card {
-    min-height: 250px;
-    padding: 2.5rem 1.5rem;
+    min-height: 180px;
+    padding: 1.5rem 1rem;
   }
 
   .choice-icon {
-    font-size: 4rem;
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
+
+  .choice-card h2 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .choice-card p {
+    font-size: 1rem;
   }
 }
