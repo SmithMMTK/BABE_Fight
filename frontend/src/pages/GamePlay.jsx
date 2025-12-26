@@ -1069,8 +1069,8 @@ function GamePlay() {
                             if (!delta || delta === 0) return null;
                             
                             const absValue = Math.abs(delta);
-                            const emoji = delta > 0 ? "+" : "-";
-                            const displayText = emoji.repeat(absValue);
+                            const symbol = delta > 0 ? "+" : "-";
+                            const displayText = absValue > 2 ? `x${absValue}` : symbol.repeat(absValue);
                             
                             return (
                               <div 
@@ -1328,8 +1328,8 @@ function GamePlay() {
                             if (!delta || delta === 0) return null;
                             
                             const absValue = Math.abs(delta);
-                            const emoji = delta > 0 ? "+" : "-";
-                            const displayText = emoji.repeat(absValue);
+                            const symbol = delta > 0 ? "+" : "-";
+                            const displayText = absValue > 2 ? `x${absValue}` : symbol.repeat(absValue);
                             
                             return (
                               <div 
