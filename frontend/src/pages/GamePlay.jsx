@@ -980,7 +980,7 @@ function GamePlay() {
                       <div>{player.username.trim()}</div>
                       {handicapInfo && (
                         <div style={{
-                          fontSize: '0.75rem',
+                          fontSize: "0.875rem",
                           fontWeight: 'normal',
                           color: index === 0 ? '#666' : (handicapInfo.startsWith(' (+') ? 'green' : 'red'),
                           marginTop: '2px'
@@ -1069,7 +1069,7 @@ function GamePlay() {
                             if (!delta || delta === 0) return null;
                             
                             const absValue = Math.abs(delta);
-                            const emoji = delta > 0 ? '🎯' : '⚠️';
+                            const emoji = delta > 0 ? "+" : "-";
                             const displayText = emoji.repeat(absValue);
                             
                             return (
@@ -1079,12 +1079,12 @@ function GamePlay() {
                                   position: 'absolute',
                                   top: '2px',
                                   left: '2px',
-                                  fontSize: '0.75rem',
+                                  fontSize: "0.875rem",
                                   fontWeight: 'bold',
                                   zIndex: 10,
                                   lineHeight: 1,
                                   pointerEvents: 'none',
-                                  textShadow: '0 0 2px white'
+                                  color: delta > 0 ? "#4caf50" : "#f44336"
                                 }}
                               >
                                 {displayText}
@@ -1135,36 +1135,75 @@ function GamePlay() {
                   })}
                 </tr>
               ))}
-              {/* Front 9 Total */}
+              {/* Front 9 Total - Gross Score with O/U Par */}
               <tr className="total-row">
                 <td className="hole-par-col-vertical"><strong>1-9</strong></td>
                 {sortedPlayers.map((player, index) => {
                   const scoreTotal = calculateFront9(player.id);
-                  let h2hDisplay = null;
                   
-                  // Show H2H total for opponents only
-                  if (index > 0 && sortedPlayers.length > 1) {
-                    const viewPlayer = sortedPlayers[0];
-                    const h2hTotal = getH2HTotalForHoles(viewPlayer.id, player.id, 1, 9);
-                    if (h2hTotal !== 0) {
-                      const sign = h2hTotal > 0 ? '+' : '';
-                      h2hDisplay = (
-                        <div style={{
-                          fontSize: '0.85rem',
-                          fontWeight: 'bold',
-                          color: h2hTotal > 0 ? '#4caf50' : '#f44336',
-                          marginTop: '2px'
-                        }}>
-                          ({sign}{h2hTotal})
-                        </div>
-                      );
+                  // Calculate Over/Under Par
+                  let overUnderPar = 0;
+                  let completedHoles = 0;
+                  course.holes.slice(0, 9).forEach(hole => {
+                    const score = scores[player.id]?.[hole.hole];
+                    if (score && score > 0) {
+                      overUnderPar += (score - hole.par);
+                      completedHoles++;
+                    }
+                  });
+                  
+                  let parText = '';
+                  if (completedHoles > 0) {
+                    if (overUnderPar > 0) {
+                      parText = ` (+${overUnderPar})`;
+                    } else if (overUnderPar < 0) {
+                      parText = ` (${overUnderPar})`;
+                    } else {
+                      parText = ' (E)';
                     }
                   }
                   
                   return (
                     <td key={player.id} className={`total-cell ${index === 0 ? 'focus-player' : ''}`}>
                       <strong>{scoreTotal}</strong>
-                      {h2hDisplay}
+                      {parText && (
+                        <span style={{
+                          fontSize: '0.85rem',
+                          fontWeight: 'bold',
+                          color: overUnderPar > 0 ? '#f44336' : overUnderPar < 0 ? '#4caf50' : '#666',
+                          marginLeft: '4px'
+                        }}>
+                          {parText}
+                        </span>
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+              {/* Front 9 - H2H Score */}
+              <tr className="total-row">
+                <td className="hole-par-col-vertical" style={{ fontSize: '0.85rem' }}>H2H</td>
+                {sortedPlayers.map((player, index) => {
+                  let h2hText = '';
+                  if (index > 0 && sortedPlayers.length > 1) {
+                    const viewPlayer = sortedPlayers[0];
+                    const h2hTotal = getH2HTotalForHoles(viewPlayer.id, player.id, 1, 9);
+                    if (h2hTotal !== 0) {
+                      const sign = h2hTotal > 0 ? '+' : '';
+                      h2hText = `${sign}${h2hTotal}`;
+                    }
+                  }
+                  
+                  return (
+                    <td key={player.id} className={`total-cell ${index === 0 ? 'focus-player' : ''}`}>
+                      {h2hText && (
+                        <span style={{
+                          fontWeight: 'bold',
+                          color: h2hText.startsWith('+') ? '#4caf50' : '#f44336'
+                        }}>
+                          {h2hText}
+                        </span>
+                      )}
                     </td>
                   );
                 })}
@@ -1200,7 +1239,7 @@ function GamePlay() {
                       <div>{player.username.trim()}</div>
                       {handicapInfo && (
                         <div style={{
-                          fontSize: '0.75rem',
+                          fontSize: "0.875rem",
                           fontWeight: 'normal',
                           color: index === 0 ? '#666' : (handicapInfo.startsWith(' (+') ? 'green' : 'red'),
                           marginTop: '2px'
@@ -1289,7 +1328,7 @@ function GamePlay() {
                             if (!delta || delta === 0) return null;
                             
                             const absValue = Math.abs(delta);
-                            const emoji = delta > 0 ? '🎯' : '⚠️';
+                            const emoji = delta > 0 ? "+" : "-";
                             const displayText = emoji.repeat(absValue);
                             
                             return (
@@ -1299,12 +1338,12 @@ function GamePlay() {
                                   position: 'absolute',
                                   top: '2px',
                                   left: '2px',
-                                  fontSize: '0.75rem',
+                                  fontSize: "0.875rem",
                                   fontWeight: 'bold',
                                   zIndex: 10,
                                   lineHeight: 1,
                                   pointerEvents: 'none',
-                                  textShadow: '0 0 2px white'
+                                  color: delta > 0 ? "#4caf50" : "#f44336"
                                 }}
                               >
                                 {displayText}
@@ -1355,70 +1394,149 @@ function GamePlay() {
                   })}
                 </tr>
               ))}
-              {/* Back 9 Total */}
+              {/* Back 9 Total - Gross Score with O/U Par */}
               <tr className="total-row">
                 <td className="hole-par-col-vertical"><strong>10-18</strong></td>
                 {sortedPlayers.map((player, index) => {
                   const scoreTotal = calculateBack9(player.id);
-                  let h2hDisplay = null;
                   
-                  // Show H2H total for opponents only
-                  if (index > 0 && sortedPlayers.length > 1) {
-                    const viewPlayer = sortedPlayers[0];
-                    const h2hTotal = getH2HTotalForHoles(viewPlayer.id, player.id, 10, 18);
-                    if (h2hTotal !== 0) {
-                      const sign = h2hTotal > 0 ? '+' : '';
-                      h2hDisplay = (
-                        <div style={{
-                          fontSize: '0.85rem',
-                          fontWeight: 'bold',
-                          color: h2hTotal > 0 ? '#4caf50' : '#f44336',
-                          marginTop: '2px'
-                        }}>
-                          ({sign}{h2hTotal})
-                        </div>
-                      );
+                  // Calculate Over/Under Par
+                  let overUnderPar = 0;
+                  let completedHoles = 0;
+                  course.holes.slice(9, 18).forEach(hole => {
+                    const score = scores[player.id]?.[hole.hole];
+                    if (score && score > 0) {
+                      overUnderPar += (score - hole.par);
+                      completedHoles++;
+                    }
+                  });
+                  
+                  let parText = '';
+                  if (completedHoles > 0) {
+                    if (overUnderPar > 0) {
+                      parText = ` (+${overUnderPar})`;
+                    } else if (overUnderPar < 0) {
+                      parText = ` (${overUnderPar})`;
+                    } else {
+                      parText = ' (E)';
                     }
                   }
                   
                   return (
                     <td key={player.id} className={`total-cell ${index === 0 ? 'focus-player' : ''}`}>
                       <strong>{scoreTotal}</strong>
-                      {h2hDisplay}
+                      {parText && (
+                        <span style={{
+                          fontSize: '0.85rem',
+                          fontWeight: 'bold',
+                          color: overUnderPar > 0 ? '#f44336' : overUnderPar < 0 ? '#4caf50' : '#666',
+                          marginLeft: '4px'
+                        }}>
+                          {parText}
+                        </span>
+                      )}
                     </td>
                   );
                 })}
               </tr>
-              {/* Grand Total */}
+              {/* Back 9 - H2H Score */}
+              <tr className="total-row">
+                <td className="hole-par-col-vertical" style={{ fontSize: '0.85rem' }}>H2H</td>
+                {sortedPlayers.map((player, index) => {
+                  let h2hText = '';
+                  if (index > 0 && sortedPlayers.length > 1) {
+                    const viewPlayer = sortedPlayers[0];
+                    const h2hTotal = getH2HTotalForHoles(viewPlayer.id, player.id, 10, 18);
+                    if (h2hTotal !== 0) {
+                      const sign = h2hTotal > 0 ? '+' : '';
+                      h2hText = `${sign}${h2hTotal}`;
+                    }
+                  }
+                  
+                  return (
+                    <td key={player.id} className={`total-cell ${index === 0 ? 'focus-player' : ''}`}>
+                      {h2hText && (
+                        <span style={{
+                          fontWeight: 'bold',
+                          color: h2hText.startsWith('+') ? '#4caf50' : '#f44336'
+                        }}>
+                          {h2hText}
+                        </span>
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+              {/* Grand Total - Gross Score with O/U Par */}
               <tr className="total-row final-row">
                 <td className="hole-par-col-vertical"><strong>Total</strong></td>
                 {sortedPlayers.map((player, index) => {
                   const scoreTotal = calculateTotal(player.id);
-                  let h2hDisplay = null;
                   
-                  // Show H2H grand total for opponents only
-                  if (index > 0 && sortedPlayers.length > 1) {
-                    const viewPlayer = sortedPlayers[0];
-                    const h2hTotal = getH2HTotalForHoles(viewPlayer.id, player.id, 1, 18);
-                    if (h2hTotal !== 0) {
-                      const sign = h2hTotal > 0 ? '+' : '';
-                      h2hDisplay = (
-                        <div style={{
-                          fontSize: '0.9rem',
-                          fontWeight: 'bold',
-                          color: h2hTotal > 0 ? '#4caf50' : '#f44336',
-                          marginTop: '2px'
-                        }}>
-                          ({sign}{h2hTotal})
-                        </div>
-                      );
+                  // Calculate Over/Under Par
+                  let overUnderPar = 0;
+                  let completedHoles = 0;
+                  course.holes.forEach(hole => {
+                    const score = scores[player.id]?.[hole.hole];
+                    if (score && score > 0) {
+                      overUnderPar += (score - hole.par);
+                      completedHoles++;
+                    }
+                  });
+                  
+                  let parText = '';
+                  if (completedHoles > 0) {
+                    if (overUnderPar > 0) {
+                      parText = ` (+${overUnderPar})`;
+                    } else if (overUnderPar < 0) {
+                      parText = ` (${overUnderPar})`;
+                    } else {
+                      parText = ' (E)';
                     }
                   }
                   
                   return (
                     <td key={player.id} className={`total-cell final ${index === 0 ? 'focus-player' : ''}`}>
                       <strong>{scoreTotal}</strong>
-                      {h2hDisplay}
+                      {parText && (
+                        <span style={{
+                          fontSize: '0.9rem',
+                          fontWeight: 'bold',
+                          color: overUnderPar > 0 ? '#f44336' : overUnderPar < 0 ? '#4caf50' : '#666',
+                          marginLeft: '4px'
+                        }}>
+                          {parText}
+                        </span>
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+              {/* Grand Total - H2H Score */}
+              <tr className="total-row">
+                <td className="hole-par-col-vertical" style={{ fontSize: '0.9rem' }}>H2H Total</td>
+                {sortedPlayers.map((player, index) => {
+                  let h2hText = '';
+                  if (index > 0 && sortedPlayers.length > 1) {
+                    const viewPlayer = sortedPlayers[0];
+                    const h2hTotal = getH2HTotalForHoles(viewPlayer.id, player.id, 1, 18);
+                    if (h2hTotal !== 0) {
+                      const sign = h2hTotal > 0 ? '+' : '';
+                      h2hText = `${sign}${h2hTotal}`;
+                    }
+                  }
+                  
+                  return (
+                    <td key={player.id} className={`total-cell ${index === 0 ? 'focus-player' : ''}`}>
+                      {h2hText && (
+                        <span style={{
+                          fontSize: '0.9rem',
+                          fontWeight: 'bold',
+                          color: h2hText.startsWith('+') ? '#4caf50' : '#f44336'
+                        }}>
+                          {h2hText}
+                        </span>
+                      )}
                     </td>
                   );
                 })}
