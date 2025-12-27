@@ -14,6 +14,8 @@ function CreateGame() {
     courseName: '',
     hostUsername: ''
   });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showDropdown, setShowDropdown] = useState(false);
 
   useEffect(() => {
     loadCourses();
@@ -31,14 +33,28 @@ function CreateGame() {
     }
   };
 
-  const handleCourseChange = (e) => {
-    const courseId = e.target.value;
-    const course = courses.find(c => c.id === courseId);
+  // Filter courses based on search term
+  const filteredCourses = courses.filter(course => 
+    course.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleCourseSelect = (course) => {
     setFormData({
       ...formData,
-      courseId,
-      courseName: course ? course.name : ''
+      courseId: course.id,
+      courseName: course.name
     });
+    setSearchTerm(course.name);
+    setShowDropdown(false);
+  };
+
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setShowDropdown(true);
+    // Clear selection if user is typing
+    if (formData.courseId && e.target.value !== formData.courseName) {
+      setFormData({...formData, courseId: '', courseName: ''});
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -86,21 +102,34 @@ function CreateGame() {
 
         <div className="card">
           <form onSubmit={handleSubmit}>
-            <div className="form-group">
+            <div className="form-group course-search">
               <label className="form-label">เลือกสนามกอล์ฟ</label>
-              <select
-                className="form-select"
-                value={formData.courseId}
-                onChange={handleCourseChange}
+              <input
+                type="text"
+                className="form-control"
+                placeholder="ค้นหาสนาม..."
+                value={searchTerm}
+                onChange={handleSearchChange}
+                onFocus={() => setShowDropdown(true)}
+                onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
                 required
-              >
-                <option value="">-- เลือกสนาม --</option>
-                {courses.map(course => (
-                  <option key={course.id} value={course.id}>
-                    {course.name} ({course.holes.length} หลุม)
-                  </option>
-                ))}
-              </select>
+              />
+              {showDropdown && filteredCourses.length > 0 && (
+                <ul className="course-dropdown">
+                  {filteredCourses.map(course => (
+                    <li
+                      key={course.id}
+                      onClick={() => handleCourseSelect(course)}
+                      className={formData.courseId === course.id ? 'selected' : ''}
+                    >
+                      {course.name} ({course.holes.length} หลุม)
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {showDropdown && searchTerm && filteredCourses.length === 0 && (
+                <div className="no-results">ไม่พบสนามที่ค้นหา</div>
+              )}
             </div>
 
             <div className="form-group">
