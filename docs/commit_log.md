@@ -46,6 +46,16 @@ Implement Head-to-Head (H2H) handicap calculation between players based on the a
 
 ## Notes
 
+### December 27, 2025 - Minor UI Adjustments
+**Type:** Minor UI
+**Commits:**
+- 5027cbb - "Minor UI adjustment: improve H2H indicator visibility - display x2 for ±2, larger font for single +/-"
+
+**Changes:**
+- Modified H2H indicator display logic to show `x2` for values ≥2 (instead of `++` or `--`)
+- Increased font size to 1.1rem for single `+` or `-` symbols (improved visibility)
+- Maintained 0.875rem font size for `x2`, `x3`, `x4`, etc.
+
 ### December 23, 2025 - Azure SQL Integration
 **Commit:** 193b608 - "fix: Connect to Azure SQL for local/dev environment"
 
