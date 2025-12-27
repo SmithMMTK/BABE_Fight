@@ -248,7 +248,9 @@
   box-shadow: none;
   overflow: hidden;
   margin: 0;
+  position: relative;
 }
+
 
 .nine-title {
   background: var(--color-primary);
@@ -268,6 +270,7 @@
   overflow-x: auto;
   overflow-y: visible;
   -webkit-overflow-scrolling: touch;
+  position: relative;
 }
 
 .scorecard {
@@ -290,6 +293,7 @@
   font-weight: 600;
   padding: 0.5rem 0.25rem;
   text-align: center;
+  position: -webkit-sticky;
   position: sticky;
   top: 0;
   z-index: 10;
@@ -826,6 +830,20 @@
 
 .total-row td {
   border: none;
+}
+
+/* H2H Total Rows Highlighting */
+.total-row.h2h-total-row {
+  background: #e8f5e9;
+}
+
+.total-row.h2h-grand-total {
+  background: #c8e6c9;
+  font-weight: 800;
+}
+
+.total-row.h2h-grand-total td {
+  padding: 0.75rem 0.125rem;
 }
 
 .total-row.final-row {

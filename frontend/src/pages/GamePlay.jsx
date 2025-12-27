@@ -681,10 +681,11 @@ function GamePlay() {
           <div style={{flex: 1, minWidth: '200px'}}>
             <h1>{game?.course_name}</h1>
             <div style={{
-              fontSize: '0.9rem',
+              fontSize: '1.2rem',
               fontWeight: '700',
-              color: '#666',
-              marginTop: '0.25rem'
+              color: '#2c3e50',
+              marginTop: '0.5rem',
+              marginBottom: '0.5rem'
             }}>
               {displayName}
             </div>
@@ -694,16 +695,18 @@ function GamePlay() {
                 onChange={(e) => setViewAsPlayerId(e.target.value ? parseInt(e.target.value) : null)}
                 style={{
                   marginTop: '0.5rem',
-                  padding: '0.25rem 0.5rem',
-                  fontSize: '0.85rem',
-                  borderRadius: '0.25rem',
-                  border: '1px solid #ccc',
+                  padding: '0.5rem 0.75rem',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  borderRadius: '0.5rem',
+                  border: '2px solid #3498db',
                   backgroundColor: 'white',
                   cursor: 'pointer',
-                  maxWidth: '200px'
+                  maxWidth: '250px',
+                  color: '#2c3e50'
                 }}
               >
-                <option value="">View as: {displayName} (Me)</option>
+                <option value="" style={{fontWeight: '700'}}>View as: {displayName} (Me)</option>
                 {players.filter(p => p.id !== currentPlayerId).map(player => (
                   <option key={player.id} value={player.id}>
                     View as: {player.username}
@@ -1139,24 +1142,29 @@ function GamePlay() {
                   
                   return (
                     <td key={player.id} className={`total-cell ${index === 0 ? 'focus-player' : ''}`}>
-                      <strong>{scoreTotal}</strong>
-                      {parText && (
-                        <span style={{
-                          fontSize: '0.85rem',
-                          fontWeight: 'bold',
-                          color: overUnderPar > 0 ? '#f44336' : overUnderPar < 0 ? '#4caf50' : '#666',
-                          marginLeft: '4px'
-                        }}>
-                          {parText}
-                        </span>
-                      )}
+                      <div style={{fontSize: '0.75rem', marginBottom: '2px'}}>{player.username}</div>
+                      <div>
+                        <strong>{scoreTotal}</strong>
+                        {parText && (
+                          <span style={{
+                            fontSize: '0.85rem',
+                            fontWeight: 'bold',
+                            color: overUnderPar > 0 ? '#f44336' : overUnderPar < 0 ? '#4caf50' : '#666',
+                            marginLeft: '4px'
+                          }}>
+                            {parText}
+                          </span>
+                        )}
+                      </div>
                     </td>
                   );
                 })}
               </tr>
               {/* Front 9 - H2H Score */}
-              <tr className="total-row">
-                <td className="hole-par-col-vertical" style={{ fontSize: '0.85rem' }}>H2H</td>
+              <tr className="total-row h2h-total-row">
+                <td className="hole-par-col-vertical" style={{ fontSize: '0.85rem' }}>
+                  <div>H2H</div>
+                </td>
                 {sortedPlayers.map((player, index) => {
                   let h2hText = '';
                   if (index > 0 && sortedPlayers.length > 1) {
@@ -1172,6 +1180,7 @@ function GamePlay() {
                     <td key={player.id} className={`total-cell ${index === 0 ? 'focus-player' : ''}`}>
                       {h2hText && (
                         <span style={{
+                          fontSize: '1rem',
                           fontWeight: 'bold',
                           color: h2hText.startsWith('+') ? '#4caf50' : '#f44336'
                         }}>
@@ -1369,24 +1378,29 @@ function GamePlay() {
                   
                   return (
                     <td key={player.id} className={`total-cell ${index === 0 ? 'focus-player' : ''}`}>
-                      <strong>{scoreTotal}</strong>
-                      {parText && (
-                        <span style={{
-                          fontSize: '0.85rem',
-                          fontWeight: 'bold',
-                          color: overUnderPar > 0 ? '#f44336' : overUnderPar < 0 ? '#4caf50' : '#666',
-                          marginLeft: '4px'
-                        }}>
-                          {parText}
-                        </span>
-                      )}
+                      <div style={{fontSize: '0.75rem', marginBottom: '2px'}}>{player.username}</div>
+                      <div>
+                        <strong>{scoreTotal}</strong>
+                        {parText && (
+                          <span style={{
+                            fontSize: '0.85rem',
+                            fontWeight: 'bold',
+                            color: overUnderPar > 0 ? '#f44336' : overUnderPar < 0 ? '#4caf50' : '#666',
+                            marginLeft: '4px'
+                          }}>
+                            {parText}
+                          </span>
+                        )}
+                      </div>
                     </td>
                   );
                 })}
               </tr>
               {/* Back 9 - H2H Score */}
-              <tr className="total-row">
-                <td className="hole-par-col-vertical" style={{ fontSize: '0.85rem' }}>H2H</td>
+              <tr className="total-row h2h-total-row">
+                <td className="hole-par-col-vertical" style={{ fontSize: '0.85rem' }}>
+                  <div>H2H</div>
+                </td>
                 {sortedPlayers.map((player, index) => {
                   let h2hText = '';
                   if (index > 0 && sortedPlayers.length > 1) {
@@ -1402,6 +1416,7 @@ function GamePlay() {
                     <td key={player.id} className={`total-cell ${index === 0 ? 'focus-player' : ''}`}>
                       {h2hText && (
                         <span style={{
+                          fontSize: '1rem',
                           fontWeight: 'bold',
                           color: h2hText.startsWith('+') ? '#4caf50' : '#f44336'
                         }}>
@@ -1442,24 +1457,32 @@ function GamePlay() {
                   
                   return (
                     <td key={player.id} className={`total-cell final ${index === 0 ? 'focus-player' : ''}`}>
-                      <strong>{scoreTotal}</strong>
-                      {parText && (
-                        <span style={{
-                          fontSize: '0.9rem',
-                          fontWeight: 'bold',
-                          color: overUnderPar > 0 ? '#f44336' : overUnderPar < 0 ? '#4caf50' : '#666',
-                          marginLeft: '4px'
-                        }}>
-                          {parText}
-                        </span>
-                      )}
+                      <div style={{fontSize: '0.8rem', fontWeight: '600', marginBottom: '2px'}}>{player.username}</div>
+                      <div>
+                        <strong>{scoreTotal}</strong>
+                        {parText && (
+                          <span style={{
+                            fontSize: '0.9rem',
+                            fontWeight: 'bold',
+                            color: overUnderPar > 0 ? '#f44336' : overUnderPar < 0 ? '#4caf50' : '#666',
+                            marginLeft: '4px'
+                          }}>
+                            {parText}
+                          </span>
+                        )}
+                      </div>
                     </td>
                   );
                 })}
               </tr>
               {/* Grand Total - H2H Score */}
-              <tr className="total-row">
-                <td className="hole-par-col-vertical" style={{ fontSize: '0.9rem' }}>H2H Total</td>
+              <tr className="total-row h2h-total-row h2h-grand-total">
+                <td className="hole-par-col-vertical" style={{ fontSize: '0.9rem' }}>
+                  <div style={{lineHeight: '1.2'}}>
+                    <div>H2H</div>
+                    <div>Total</div>
+                  </div>
+                </td>
                 {sortedPlayers.map((player, index) => {
                   let h2hText = '';
                   if (index > 0 && sortedPlayers.length > 1) {
@@ -1475,8 +1498,8 @@ function GamePlay() {
                     <td key={player.id} className={`total-cell ${index === 0 ? 'focus-player' : ''}`}>
                       {h2hText && (
                         <span style={{
-                          fontSize: '0.9rem',
-                          fontWeight: 'bold',
+                          fontSize: '1.2rem',
+                          fontWeight: '700',
                           color: h2hText.startsWith('+') ? '#4caf50' : '#f44336'
                         }}>
                           {h2hText}
