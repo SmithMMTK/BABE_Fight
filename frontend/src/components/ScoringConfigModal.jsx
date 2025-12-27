@@ -3,6 +3,7 @@ import './ScoringConfigModal.css';
 
 function ScoringConfigModal({ isOpen, onClose, currentConfig, onSave, isReadOnly = false }) {
   const [holeInOne, setHoleInOne] = useState(10);
+  const [albatross, setAlbatross] = useState(10);
   const [eagle, setEagle] = useState(5);
   const [birdie, setBirdie] = useState(2);
   const [parOrWorse, setParOrWorse] = useState(1);
@@ -12,6 +13,7 @@ function ScoringConfigModal({ isOpen, onClose, currentConfig, onSave, isReadOnly
   useEffect(() => {
     if (currentConfig) {
       setHoleInOne(currentConfig.holeInOne || 10);
+      setAlbatross(currentConfig.albatross || 10);
       setEagle(currentConfig.eagle || 5);
       setBirdie(currentConfig.birdie || 2);
       setParOrWorse(currentConfig.parOrWorse || 1);
@@ -24,18 +26,20 @@ function ScoringConfigModal({ isOpen, onClose, currentConfig, onSave, isReadOnly
     if (currentConfig) {
       const changed = 
         parseInt(holeInOne) !== (currentConfig.holeInOne || 10) ||
+        parseInt(albatross) !== (currentConfig.albatross || 10) ||
         parseInt(eagle) !== (currentConfig.eagle || 5) ||
         parseInt(birdie) !== (currentConfig.birdie || 2) ||
         parseInt(parOrWorse) !== (currentConfig.parOrWorse || 1);
       setHasChanges(changed);
     }
-  }, [holeInOne, eagle, birdie, parOrWorse, currentConfig]);
+  }, [holeInOne, albatross, eagle, birdie, parOrWorse, currentConfig]);
 
   const handleSave = async () => {
     setIsSaving(true);
     try {
       await onSave({
         holeInOne: parseInt(holeInOne),
+        albatross: parseInt(albatross),
         eagle: parseInt(eagle),
         birdie: parseInt(birdie),
         parOrWorse: parseInt(parOrWorse)
@@ -61,6 +65,7 @@ function ScoringConfigModal({ isOpen, onClose, currentConfig, onSave, isReadOnly
 
   const handleReset = () => {
     setHoleInOne(10);
+    setAlbatross(10);
     setEagle(5);
     setBirdie(2);
     setParOrWorse(1);
@@ -93,6 +98,22 @@ function ScoringConfigModal({ isOpen, onClose, currentConfig, onSave, isReadOnly
                 min="0"
                 value={holeInOne}
                 onChange={(e) => setHoleInOne(e.target.value)}
+                disabled={isSaving || isReadOnly}
+              />
+              <span className="unit">คะแนน</span>
+            </div>
+
+            <div className="config-item">
+              <label htmlFor="albatross">
+                <span className="emoji">🦩</span>
+                Albatross (-3)
+              </label>
+              <input
+                id="albatross"
+                type="number"
+                min="0"
+                value={albatross}
+                onChange={(e) => setAlbatross(e.target.value)}
                 disabled={isSaving || isReadOnly}
               />
               <span className="unit">คะแนน</span>

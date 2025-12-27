@@ -89,7 +89,9 @@ export function calculateH2HScoring({
     
     if (par === 3 && grossToEvaluate === 1) {
       scoreType = 'HIO';
-    } else if (grossToEvaluate <= par - 2) {
+    } else if (grossToEvaluate <= par - 3) {
+      scoreType = 'Albatross';
+    } else if (grossToEvaluate === par - 2) {
       scoreType = 'Eagle';
     } else if (grossToEvaluate === par - 1) {
       scoreType = 'Birdie';
@@ -101,6 +103,8 @@ export function calculateH2HScoring({
     let basePoint;
     if (scoreType === 'HIO') {
       basePoint = h2hConfig.holeInOne || h2hConfig.HIO || 10;
+    } else if (scoreType === 'Albatross') {
+      basePoint = h2hConfig.albatross || h2hConfig.Albatross || 10;
     } else if (scoreType === 'Eagle') {
       basePoint = h2hConfig.eagle || h2hConfig.Eagle || 5;
     } else if (scoreType === 'Birdie') {

@@ -73,10 +73,11 @@ router.post('/create', async (req, res) => {
     await configRequest
       .input('gameId', gameId)
       .input('holeInOne', defaultScoringConfig.holeInOne)
+      .input('albatross', defaultScoringConfig.albatross)
       .input('eagle', defaultScoringConfig.eagle)
       .input('birdie', defaultScoringConfig.birdie)
       .input('parOrWorse', defaultScoringConfig.parOrWorse)
-      .query('INSERT INTO game_scoring_config (game_id, hole_in_one, eagle, birdie, par_or_worse) VALUES (@gameId, @holeInOne, @eagle, @birdie, @parOrWorse)');
+      .query('INSERT INTO game_scoring_config (game_id, hole_in_one, albatross, eagle, birdie, par_or_worse) VALUES (@gameId, @holeInOne, @albatross, @eagle, @birdie, @parOrWorse)');
     
 
     res.json({
@@ -453,7 +454,7 @@ router.post('/:gameId/players/:playerId/handicap', async (req, res) => {
 
 // Load default scoring config
 const defaultScoringConfigPath = join(__dirname, '../../../Resources/h2h-scoring-config.json');
-let defaultScoringConfig = { holeInOne: 10, eagle: 5, birdie: 2, parOrWorse: 1 };
+let defaultScoringConfig = { holeInOne: 10, albatross: 10, eagle: 5, birdie: 2, parOrWorse: 1 };
 try {
   defaultScoringConfig = JSON.parse(fs.readFileSync(defaultScoringConfigPath, 'utf8'));
 } catch (err) {
@@ -473,7 +474,7 @@ router.get('/:gameId/scoring-config', async (req, res) => {
 
     // Get scoring config from database
     const config = await db.get(
-      'SELECT hole_in_one, eagle, birdie, par_or_worse FROM game_scoring_config WHERE game_id = ?',
+      'SELECT hole_in_one, albatross, eagle, birdie, par_or_worse FROM game_scoring_config WHERE game_id = ?',
       [gameId]
     );
 
@@ -481,6 +482,7 @@ router.get('/:gameId/scoring-config', async (req, res) => {
       // Return existing config from database (single source of truth)
       res.json({
         holeInOne: config.hole_in_one,
+        albatross: config.albatross,
         eagle: config.eagle,
         birdie: config.birdie,
         parOrWorse: config.par_or_worse
@@ -503,15 +505,15 @@ router.get('/:gameId/scoring-config', async (req, res) => {
 router.put('/:gameId/scoring-config', async (req, res) => {
   try {
     const { gameId } = req.params;
-    const { holeInOne, eagle, birdie, parOrWorse, playerId } = req.body;
+    const { holeInOne, albatross, eagle, birdie, parOrWorse, playerId } = req.body;
 
     // Validate required fields
-    if (holeInOne === undefined || eagle === undefined || birdie === undefined || parOrWorse === undefined || !playerId) {
+    if (holeInOne === undefined || albatross === undefined || eagle === undefined || birdie === undefined || parOrWorse === undefined || !playerId) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
     // Validate that values are positive integers
-    if (holeInOne < 0 || eagle < 0 || birdie < 0 || parOrWorse < 0) {
+    if (holeInOne < 0 || albatross < 0 || eagle < 0 || birdie < 0 || parOrWorse < 0) {
       return res.status(400).json({ error: 'All values must be positive integers' });
     }
 
@@ -542,22 +544,24 @@ router.put('/:gameId/scoring-config', async (req, res) => {
     request
       .input('gameId', gameId)
       .input('holeInOne', holeInOne)
+      .input('albatross', albatross)
       .input('eagle', eagle)
       .input('birdie', birdie)
       .input('parOrWorse', parOrWorse);
     
     if (existingConfig) {
       await request.query(
-        'UPDATE game_scoring_config SET hole_in_one = @holeInOne, eagle = @eagle, birdie = @birdie, par_or_worse = @parOrWorse, updated_at = GETDATE() WHERE game_id = @gameId'
+        'UPDATE game_scoring_config SET hole_in_one = @holeInOne, albatross = @albatross, eagle = @eagle, birdie = @birdie, par_or_worse = @parOrWorse, updated_at = GETDATE() WHERE game_id = @gameId'
       );
     } else {
       await request.query(
-        'INSERT INTO game_scoring_config (game_id, hole_in_one, eagle, birdie, par_or_worse) VALUES (@gameId, @holeInOne, @eagle, @birdie, @parOrWorse)'
+        'INSERT INTO game_scoring_config (game_id, hole_in_one, albatross, eagle, birdie, par_or_worse) VALUES (@gameId, @holeInOne, @albatross, @eagle, @birdie, @parOrWorse)'
       );
     }
 
     const updatedConfig = {
       holeInOne,
+      albatross,
       eagle,
       birdie,
       parOrWorse

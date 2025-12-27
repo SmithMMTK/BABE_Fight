@@ -202,7 +202,7 @@ function GamePlay() {
     } catch (err) {
       console.error('[Scoring Config] Failed to load:', err);
       // Set default values if loading fails
-      setScoringConfig({ holeInOne: 10, eagle: 5, birdie: 2, parOrWorse: 1 });
+      setScoringConfig({ holeInOne: 10, albatross: 10, eagle: 5, birdie: 2, parOrWorse: 1 });
     }
   };
 
@@ -604,7 +604,9 @@ function GamePlay() {
     let scoreType;
     if (par === 3 && grossToEvaluate === 1) {
       scoreType = 'HIO';
-    } else if (grossToEvaluate <= par - 2) {
+    } else if (grossToEvaluate <= par - 3) {
+      scoreType = 'Albatross';
+    } else if (grossToEvaluate === par - 2) {
       scoreType = 'Eagle';
     } else if (grossToEvaluate === par - 1) {
       scoreType = 'Birdie';
@@ -616,6 +618,8 @@ function GamePlay() {
     let basePoint;
     if (scoreType === 'HIO') {
       basePoint = scoringConfig.holeInOne || scoringConfig.HIO || 10;
+    } else if (scoreType === 'Albatross') {
+      basePoint = scoringConfig.albatross || scoringConfig.Albatross || 10;
     } else if (scoreType === 'Eagle') {
       basePoint = scoringConfig.eagle || scoringConfig.Eagle || 5;
     } else if (scoreType === 'Birdie') {
@@ -640,7 +644,9 @@ function GamePlay() {
         let opponentScoreType;
         if (par === 3 && opponentScore === 1) {
           opponentScoreType = 'HIO';
-        } else if (opponentScore <= par - 2) {
+        } else if (opponentScore <= par - 3) {
+          opponentScoreType = 'Albatross';
+        } else if (opponentScore === par - 2) {
           opponentScoreType = 'Eagle';
         } else if (opponentScore === par - 1) {
           opponentScoreType = 'Birdie';
@@ -649,6 +655,8 @@ function GamePlay() {
         let penaltyBasePoint;
         if (opponentScoreType === 'HIO') {
           penaltyBasePoint = scoringConfig.holeInOne || scoringConfig.HIO || 10;
+        } else if (opponentScoreType === 'Albatross') {
+          penaltyBasePoint = scoringConfig.albatross || scoringConfig.Albatross || 10;
         } else if (opponentScoreType === 'Eagle') {
           penaltyBasePoint = scoringConfig.eagle || scoringConfig.Eagle || 5;
         } else if (opponentScoreType === 'Birdie') {
