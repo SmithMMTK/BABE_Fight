@@ -1078,7 +1078,7 @@ function GamePlay() {
                             
                             const absValue = Math.abs(delta);
                             const symbol = delta > 0 ? "+" : "-";
-                            const displayText = absValue >= 2 ? `x${absValue}` : symbol.repeat(absValue);
+                            const displayText = absValue >= 2 ? `${symbol}${absValue}` : symbol.repeat(absValue);
                             
                             return (
                               <div 
@@ -1337,7 +1337,7 @@ function GamePlay() {
                             
                             const absValue = Math.abs(delta);
                             const symbol = delta > 0 ? "+" : "-";
-                            const displayText = absValue >= 2 ? `x${absValue}` : symbol.repeat(absValue);
+                            const displayText = absValue >= 2 ? `${symbol}${absValue}` : symbol.repeat(absValue);
                             
                             return (
                               <div 
