@@ -1070,7 +1070,7 @@ function GamePlay() {
                             
                             const absValue = Math.abs(delta);
                             const symbol = delta > 0 ? "+" : "-";
-                            const displayText = absValue > 2 ? `x${absValue}` : symbol.repeat(absValue);
+                            const displayText = absValue >= 2 ? `x${absValue}` : symbol.repeat(absValue);
                             
                             return (
                               <div 
@@ -1079,7 +1079,7 @@ function GamePlay() {
                                   position: 'absolute',
                                   top: '2px',
                                   left: '2px',
-                                  fontSize: "0.875rem",
+                                  fontSize: absValue === 1 ? "1.1rem" : "0.875rem",
                                   fontWeight: 'bold',
                                   zIndex: 10,
                                   lineHeight: 1,
@@ -1329,7 +1329,7 @@ function GamePlay() {
                             
                             const absValue = Math.abs(delta);
                             const symbol = delta > 0 ? "+" : "-";
-                            const displayText = absValue > 2 ? `x${absValue}` : symbol.repeat(absValue);
+                            const displayText = absValue >= 2 ? `x${absValue}` : symbol.repeat(absValue);
                             
                             return (
                               <div 
@@ -1338,7 +1338,7 @@ function GamePlay() {
                                   position: 'absolute',
                                   top: '2px',
                                   left: '2px',
-                                  fontSize: "0.875rem",
+                                  fontSize: absValue === 1 ? "1.1rem" : "0.875rem",
                                   fontWeight: 'bold',
                                   zIndex: 10,
                                   lineHeight: 1,
