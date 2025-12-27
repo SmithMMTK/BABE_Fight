@@ -4,6 +4,7 @@ import { useSocket } from '../context/SocketContext';
 import { api } from '../services/api';
 import PlayersMenu from '../components/PlayersMenu';
 import ScoringConfigModal from '../components/ScoringConfigModal';
+import TurboConfigModal from '../components/TurboConfigModal';
 import { calculateStrokeAllocation, getStrokeDisplay, allocateStrokesFor9Holes } from '../utils/strokeAllocation';
 import { calculateH2HScoring, formatH2HDebugOutput } from '../utils/h2hScoring';
 import './GamePlay.css';
@@ -27,9 +28,7 @@ function GamePlay() {
   const [versionInfo, setVersionInfo] = useState(null);
   const [viewAsPlayerId, setViewAsPlayerId] = useState(null); // For HOST to view as another player
   const [turboValues, setTurboValues] = useState({}); // Track turbo multipliers for each hole
-  const [showTurboDropdown, setShowTurboDropdown] = useState(null); // holeNumber
-  const [lastTapTime, setLastTapTime] = useState({});
-  const [lastTapHole, setLastTapHole] = useState(null);
+  const [showTurboConfigModal, setShowTurboConfigModal] = useState(false);
   const [h2hStrokeAllocation, setH2hStrokeAllocation] = useState(null); // H2H handicap matrix from server
   const [rawH2hMatrix, setRawH2hMatrix] = useState(null); // Raw H2H matrix from database
   const [h2hReloadTrigger, setH2hReloadTrigger] = useState(0); // Trigger to force H2H reload
@@ -106,6 +105,7 @@ function GamePlay() {
       socket.on('role-changed', handleRoleChanged);
       socket.on('username-changed', handleUsernameChanged);
       socket.on('turbo-updated', handleTurboUpdate);
+      socket.on('turbo-bulk-update', handleTurboBulkUpdate);
       socket.on('player-added', handlePlayerAdded);
       socket.on('player-removed', handlePlayerRemoved);
       socket.on('scoring-config-updated', handleScoringConfigUpdate);
@@ -115,6 +115,7 @@ function GamePlay() {
         socket.off('role-changed', handleRoleChanged);
         socket.off('username-changed', handleUsernameChanged);
         socket.off('turbo-updated', handleTurboUpdate);
+        socket.off('turbo-bulk-update', handleTurboBulkUpdate);
         socket.off('player-added', handlePlayerAdded);
         socket.off('player-removed', handlePlayerRemoved);
         socket.off('scoring-config-updated', handleScoringConfigUpdate);
@@ -274,42 +275,22 @@ function GamePlay() {
   };
 
   // Turbo multiplier functions
-  const handleTurboDoubleTap = (holeNumber) => {
-    if (!isCurrentUserHost) return;
-    
-    const now = Date.now();
-    const lastTap = lastTapTime[holeNumber] || 0;
-    const timeSinceLastTap = now - lastTap;
-    
-    if (timeSinceLastTap < 300 && timeSinceLastTap > 0 && lastTapHole === holeNumber) {
-      // Double tap detected
-      setShowTurboDropdown(holeNumber);
-      setLastTapTime({});
-      setLastTapHole(null);
-    } else {
-      // First tap
-      setLastTapTime({ ...lastTapTime, [holeNumber]: now });
-      setLastTapHole(holeNumber);
-    }
-  };
-
-  const updateTurboValue = async (holeNumber, multiplier) => {
-    setTurboValues(prev => ({
-      ...prev,
-      [holeNumber]: multiplier
-    }));
-    setShowTurboDropdown(null);
-    
-    // Save to database
+  const handleSaveTurboConfig = async (newTurboValues) => {
+    // Save all turbo values to database
     try {
-      await api.updateTurboValue(gameId, { holeNumber, multiplier });
+      for (const [hole, multiplier] of Object.entries(newTurboValues)) {
+        await api.updateTurboValue(gameId, { holeNumber: parseInt(hole), multiplier });
+      }
+      
+      setTurboValues(newTurboValues);
+      
+      // Broadcast to other players
+      if (socket) {
+        socket.emit('turbo-bulk-update', { gameId, turboValues: newTurboValues });
+      }
     } catch (err) {
-      console.error('Failed to save turbo value:', err);
-    }
-    
-    // Broadcast to other players
-    if (socket) {
-      socket.emit('turbo-update', { gameId, holeNumber, multiplier });
+      console.error('Failed to save turbo configuration:', err);
+      throw err; // Let modal handle the error
     }
   };
 
@@ -318,6 +299,10 @@ function GamePlay() {
       ...prev,
       [holeNumber]: multiplier
     }));
+  };
+
+  const handleTurboBulkUpdate = ({ turboValues: newValues }) => {
+    setTurboValues(newValues);
   };
 
   const handlePlayerAdded = (player) => {
@@ -777,6 +762,16 @@ function GamePlay() {
                   className="hamburger-menu-item"
                   onClick={() => {
                     setShowHamburgerMenu(false);
+                    setShowTurboConfigModal(true);
+                  }}
+                >
+                  <span className="menu-icon">⚡</span>
+                  <span>กำหนดหลุมเทอร์โบ{!isHost && ' (ดูอย่างเดียว)'}</span>
+                </button>
+                <button 
+                  className="hamburger-menu-item"
+                  onClick={() => {
+                    setShowHamburgerMenu(false);
                     setShowScoringConfigModal(true);
                   }}
                 >
@@ -1006,11 +1001,8 @@ function GamePlay() {
                 <tr key={idx} className={turboValues[hole.hole] > 1 ? 'turbo-row' : ''}>
                   <td 
                     className="hole-par-col-vertical"
-                    onClick={() => handleTurboDoubleTap(hole.hole)}
-                    onDoubleClick={() => isCurrentUserHost && setShowTurboDropdown(hole.hole)}
                     style={{ 
                       position: 'relative', 
-                      cursor: isCurrentUserHost ? 'pointer' : 'default', 
                       userSelect: 'none',
                       WebkitTouchCallout: 'none',
                       WebkitUserSelect: 'none'
@@ -1021,32 +1013,6 @@ function GamePlay() {
                         {hole.hole}
                         {turboValues[hole.hole] > 1 && <span className="turbo-badge">x{turboValues[hole.hole]}</span>}
                       </div>
-                      {showTurboDropdown === hole.hole && (
-                        <select
-                          className="turbo-dropdown"
-                          value={turboValues[hole.hole] || 1}
-                          onChange={(e) => updateTurboValue(hole.hole, parseInt(e.target.value))}
-                          onBlur={() => setShowTurboDropdown(null)}
-                          autoFocus
-                          style={{
-                            position: 'absolute',
-                            top: '50%',
-                            left: '50%',
-                            transform: 'translate(-50%, -50%)',
-                            zIndex: 1000,
-                            fontSize: '0.9rem',
-                            padding: '0.25rem',
-                            borderRadius: '0.25rem',
-                            border: '1px solid #ddd',
-                            background: 'white',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-                          }}
-                        >
-                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
-                            <option key={num} value={num}>x{num}</option>
-                          ))}
-                        </select>
-                      )}
                       <div className="par-hc-group">
                         <div className="par-value">Par {hole.par}</div>
                         <div className="hc-value">HC {hole.hc}</div>
@@ -1265,11 +1231,8 @@ function GamePlay() {
                 <tr key={idx} className={turboValues[hole.hole] > 1 ? 'turbo-row' : ''}>
                   <td 
                     className="hole-par-col-vertical"
-                    onClick={() => handleTurboDoubleTap(hole.hole)}
-                    onDoubleClick={() => isCurrentUserHost && setShowTurboDropdown(hole.hole)}
                     style={{ 
                       position: 'relative', 
-                      cursor: isCurrentUserHost ? 'pointer' : 'default', 
                       userSelect: 'none',
                       WebkitTouchCallout: 'none',
                       WebkitUserSelect: 'none'
@@ -1280,32 +1243,6 @@ function GamePlay() {
                         {hole.hole}
                         {turboValues[hole.hole] > 1 && <span className="turbo-badge">x{turboValues[hole.hole]}</span>}
                       </div>
-                      {showTurboDropdown === hole.hole && (
-                        <select
-                          className="turbo-dropdown"
-                          value={turboValues[hole.hole] || 1}
-                          onChange={(e) => updateTurboValue(hole.hole, parseInt(e.target.value))}
-                          onBlur={() => setShowTurboDropdown(null)}
-                          autoFocus
-                          style={{
-                            position: 'absolute',
-                            top: '50%',
-                            left: '50%',
-                            transform: 'translate(-50%, -50%)',
-                            zIndex: 1000,
-                            fontSize: '0.9rem',
-                            padding: '0.25rem',
-                            borderRadius: '0.25rem',
-                            border: '1px solid #ddd',
-                            background: 'white',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-                          }}
-                        >
-                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
-                            <option key={num} value={num}>x{num}</option>
-                          ))}
-                        </select>
-                      )}
                       <div className="par-hc-group">
                         <div className="par-value">Par {hole.par}</div>
                         <div className="hc-value">HC {hole.hc}</div>
@@ -1560,6 +1497,15 @@ function GamePlay() {
         onClose={() => setShowScoringConfigModal(false)}
         currentConfig={scoringConfig}
         onSave={handleSaveScoringConfig}
+        isReadOnly={!isHost}
+      />
+
+      {/* Turbo Config Modal */}
+      <TurboConfigModal
+        isOpen={showTurboConfigModal}
+        onClose={() => setShowTurboConfigModal(false)}
+        currentTurboValues={turboValues}
+        onSave={handleSaveTurboConfig}
         isReadOnly={!isHost}
       />
     </div>
