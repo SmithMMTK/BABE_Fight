@@ -19,16 +19,25 @@ try {
   // Try multiple paths for different environments
   const possiblePaths = [
     path.join(__dirname, '../../../version.config.json'),  // Local dev
-    path.join(process.cwd(), 'version.config.json'),        // Docker/Production
+    '/app/version.config.json',                             // Docker absolute path
+    path.join(process.cwd(), 'version.config.json'),        // Docker/Production relative
   ];
   
+  let foundPath = null;
   for (const configPath of possiblePaths) {
     if (fs.existsSync(configPath)) {
       const configData = fs.readFileSync(configPath, 'utf8');
       versionConfig = JSON.parse(configData);
+      foundPath = configPath;
       console.log('✅ Version config loaded from:', configPath);
       break;
+    } else {
+      console.log('⚠️  Version config not found at:', configPath);
     }
+  }
+  
+  if (!foundPath) {
+    console.error('❌ Version config not found in any path');
   }
 } catch (err) {
   console.error('Failed to load version config:', err);
