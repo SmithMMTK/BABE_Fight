@@ -18,10 +18,6 @@ echo "Version: $VERSION"
 echo "Commit: $COMMIT_HASH"
 echo ""
 
-# 0. Update version config with git commit hash
-echo "0. Updating version config..."
-./scripts/update-version.sh
-
 # 1. Login to ACR
 echo ""
 echo "1. Logging in to Azure Container Registry..."
@@ -30,11 +26,18 @@ az acr login --name $ACR_NAME
 # 2. Build and push new Docker image
 echo ""
 echo "2. Building and pushing Docker image..."
+
+# Read version from version.config.json
+APP_VERSION=$(grep -o '"version": "[^"]*"' version.config.json | cut -d'"' -f4)
+BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
 docker buildx build \
   --platform linux/amd64 \
   -t ${ACR_NAME}.azurecr.io/babe-fight:latest \
   -t ${ACR_NAME}.azurecr.io/babe-fight:${VERSION} \
-  --build-arg COMMIT_HASH=$COMMIT_HASH \
+  --build-arg APP_VERSION="${APP_VERSION}" \
+  --build-arg GIT_COMMIT="${COMMIT_HASH}" \
+  --build-arg BUILD_TIME="${BUILD_TIME}" \
   --push \
   .
 
