@@ -35,6 +35,9 @@ COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 # Copy Resources folder (courses and turbo config)
 COPY Resources/ ./Resources/
 
+# Copy version config
+COPY version.config.json ./version.config.json
+
 # Create data directory for SQLite
 RUN mkdir -p /app/backend/data && \
     chown -R node:node /app

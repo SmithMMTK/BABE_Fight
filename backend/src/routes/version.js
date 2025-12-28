@@ -16,10 +16,19 @@ let versionConfig = {
 };
 
 try {
-  const configPath = path.join(__dirname, '../../../version.config.json');
-  if (fs.existsSync(configPath)) {
-    const configData = fs.readFileSync(configPath, 'utf8');
-    versionConfig = JSON.parse(configData);
+  // Try multiple paths for different environments
+  const possiblePaths = [
+    path.join(__dirname, '../../../version.config.json'),  // Local dev
+    path.join(process.cwd(), 'version.config.json'),        // Docker/Production
+  ];
+  
+  for (const configPath of possiblePaths) {
+    if (fs.existsSync(configPath)) {
+      const configData = fs.readFileSync(configPath, 'utf8');
+      versionConfig = JSON.parse(configData);
+      console.log('✅ Version config loaded from:', configPath);
+      break;
+    }
   }
 } catch (err) {
   console.error('Failed to load version config:', err);
