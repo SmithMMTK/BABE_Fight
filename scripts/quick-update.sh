@@ -18,7 +18,12 @@ echo "Version: $VERSION"
 echo "Commit: $COMMIT_HASH"
 echo ""
 
+# 0. Update version config with git commit hash
+echo "0. Updating version config..."
+./scripts/update-version.sh
+
 # 1. Login to ACR
+echo ""
 echo "1. Logging in to Azure Container Registry..."
 az acr login --name $ACR_NAME
 

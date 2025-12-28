@@ -20,8 +20,8 @@ function JoinGame() {
       return;
     }
 
-    if (formData.pin.length !== 4) {
-      setError('PIN ต้องเป็นตัวเลข 4 หลัก');
+    if (formData.pin.length !== 6) {
+      setError('PIN ต้องเป็นตัวเลข 6 หลัก');
       return;
     }
 
@@ -59,17 +59,17 @@ function JoinGame() {
         <div className="card">
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label className="form-label">Game PIN (4 หลัก)</label>
+              <label className="form-label">Game PIN (6 หลัก)</label>
               <input
                 type="text"
                 className="form-control"
-                placeholder="0000"
+                placeholder="000000"
                 value={formData.pin}
                 onChange={(e) => setFormData({...formData, pin: e.target.value.replace(/\D/g, '')})}
-                maxLength={4}
+                maxLength={6}
                 required
                 inputMode="numeric"
-                pattern="[0-9]{4}"
+                pattern="[0-9]{6}"
               />
             </div>
 
