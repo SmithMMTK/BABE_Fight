@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 import { api } from '../services/api';
@@ -77,10 +77,15 @@ function GamePlay() {
   }, []);
 
   // Load H2H matrix when course and turboValues are ready, or when trigger changes
+  // Performance: Debounce to avoid excessive recalculations
   useEffect(() => {
-    if (course && turboValues && Object.keys(turboValues).length > 0) {
+    if (!course || !turboValues || Object.keys(turboValues).length === 0) return;
+    
+    const timeoutId = setTimeout(() => {
       loadH2HMatrix();
-    }
+    }, 300); // Debounce by 300ms
+    
+    return () => clearTimeout(timeoutId);
   }, [course, turboValues, gameId, h2hReloadTrigger]); // Add h2hReloadTrigger
 
   useEffect(() => {

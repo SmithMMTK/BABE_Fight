@@ -4,6 +4,18 @@
   box-sizing: border-box;
 }
 
+/* Performance: Reduce motion for users who prefer it (battery saver) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 :root {
   --color-primary: #2c3e50;
   --color-secondary: #3498db;
@@ -75,19 +87,21 @@ body {
   border: none;
   border-radius: 0.75rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: opacity 0.15s ease, box-shadow 0.15s ease;
   box-shadow: var(--shadow);
   min-height: 3.5rem;
   line-height: 1.5rem;
+  /* Performance: Use opacity instead of transform for hover */
+  will-change: opacity;
 }
 
 .btn:hover {
-  transform: translateY(-2px);
+  opacity: 0.9;
   box-shadow: var(--shadow-lg);
 }
 
 .btn:active {
-  transform: translateY(0);
+  opacity: 0.85;
 }
 
 .btn-primary {

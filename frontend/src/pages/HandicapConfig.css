@@ -25,13 +25,11 @@
   color: #666;
   font-size: 0.75rem;
   font-style: italic;
-  animation: pulse 1.5s ease-in-out infinite;
+  /* Performance: Remove infinite animation to save battery */
+  opacity: 0.8;
 }
 
-@keyframes pulse {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
-}
+/* Removed infinite pulse animation for better mobile battery performance */
 
 .btn-back {
   background: transparent;

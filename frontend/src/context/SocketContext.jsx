@@ -35,7 +35,21 @@ export function SocketProvider({ children }) {
 
     setSocket(newSocket);
 
+    // Battery optimization: disconnect socket when page is hidden/backgrounded
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        console.log('📵 Page hidden - disconnecting socket to save battery');
+        newSocket?.disconnect();
+      } else {
+        console.log('📱 Page visible - reconnecting socket');
+        newSocket?.connect();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       newSocket.close();
     };
   }, []);
