@@ -16,6 +16,26 @@ const getApiUrl = () => {
 
 const API_URL = getApiUrl();
 
+// Cache for handicap matrix (reduces repeated API calls)
+let handicapMatrixCache = new Map();
+
+const getCachedHandicapMatrix = async (gameId) => {
+  if (handicapMatrixCache.has(gameId)) {
+    return handicapMatrixCache.get(gameId);
+  }
+  const response = await axios.get(`${API_URL}/games/${gameId}/handicap-matrix`);
+  handicapMatrixCache.set(gameId, response);
+  return response;
+};
+
+const clearHandicapMatrixCache = (gameId) => {
+  if (gameId) {
+    handicapMatrixCache.delete(gameId);
+  } else {
+    handicapMatrixCache.clear();
+  }
+};
+
 export const api = {
   // Games
   createGame: (data) => axios.post(`${API_URL}/games/create`, data),
@@ -38,10 +58,16 @@ export const api = {
   getTurboValues: (gameId) => axios.get(`${API_URL}/games/${gameId}/turbo`),
   updateTurboValue: (gameId, data) => axios.post(`${API_URL}/games/${gameId}/turbo`, data),
   
-  // Handicap
-  getHandicapMatrix: (gameId) => axios.get(`${API_URL}/games/${gameId}/handicap-matrix`),
-  updateHandicapMatrix: (gameId, matrix) => axios.post(`${API_URL}/games/${gameId}/handicap-matrix`, { handicapMatrix: matrix }),
-  updatePlayerHandicap: (gameId, playerId, handicap) => axios.post(`${API_URL}/games/${gameId}/players/${playerId}/handicap`, { handicap }),
+  // Handicap (with caching)
+  getHandicapMatrix: (gameId) => getCachedHandicapMatrix(gameId),
+  updateHandicapMatrix: (gameId, matrix) => {
+    clearHandicapMatrixCache(gameId);
+    return axios.post(`${API_URL}/games/${gameId}/handicap-matrix`, { handicapMatrix: matrix });
+  },
+  updatePlayerHandicap: (gameId, playerId, handicap) => {
+    clearHandicapMatrixCache(gameId);
+    return axios.post(`${API_URL}/games/${gameId}/players/${playerId}/handicap`, { handicap });
+  },
   
   // Scoring Configuration
   getScoringConfig: (gameId) => axios.get(`${API_URL}/games/${gameId}/scoring-config`),

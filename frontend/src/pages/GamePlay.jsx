@@ -1,11 +1,13 @@
-import { useState, useEffect, useMemo, useCallback, memo } from 'react';
+import { useState, useEffect, useMemo, useCallback, memo, lazy, Suspense } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 import { api } from '../services/api';
 import PlayersMenu from '../components/PlayersMenu';
-import ScoringConfigModal from '../components/ScoringConfigModal';
-import TurboConfigModal from '../components/TurboConfigModal';
 import { calculateStrokeAllocation, getStrokeDisplay, allocateStrokesFor9Holes } from '../utils/strokeAllocation';
+
+// Lazy load modals - loaded only when needed
+const ScoringConfigModal = lazy(() => import('../components/ScoringConfigModal'));
+const TurboConfigModal = lazy(() => import('../components/TurboConfigModal'));
 import { calculateH2HScoring, formatH2HDebugOutput } from '../utils/h2hScoring';
 import './GamePlay.css';
 
@@ -1519,23 +1521,26 @@ function GamePlay() {
         </div>
       </div>
 
-      {/* Scoring Config Modal */}
-      <ScoringConfigModal
-        isOpen={showScoringConfigModal}
-        onClose={() => setShowScoringConfigModal(false)}
-        currentConfig={scoringConfig}
-        onSave={handleSaveScoringConfig}
-        isReadOnly={!isHost}
-      />
+      {/* Modals with Suspense for lazy loading */}
+      <Suspense fallback={<div />}>
+        {/* Scoring Config Modal */}
+        <ScoringConfigModal
+          isOpen={showScoringConfigModal}
+          onClose={() => setShowScoringConfigModal(false)}
+          currentConfig={scoringConfig}
+          onSave={handleSaveScoringConfig}
+          isReadOnly={!isHost}
+        />
 
-      {/* Turbo Config Modal */}
-      <TurboConfigModal
-        isOpen={showTurboConfigModal}
-        onClose={() => setShowTurboConfigModal(false)}
-        currentTurboValues={turboValues}
-        onSave={handleSaveTurboConfig}
-        isReadOnly={!isHost}
-      />
+        {/* Turbo Config Modal */}
+        <TurboConfigModal
+          isOpen={showTurboConfigModal}
+          onClose={() => setShowTurboConfigModal(false)}
+          currentTurboValues={turboValues}
+          onSave={handleSaveTurboConfig}
+          isReadOnly={!isHost}
+        />
+      </Suspense>
     </div>
   );
 }
