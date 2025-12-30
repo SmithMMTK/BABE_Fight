@@ -146,6 +146,7 @@ function TurboConfigModal({ isOpen, onClose, currentTurboValues, onSave, isReadO
                       onChange={(e) => handleCustomChange(hole, e.target.value)}
                       disabled={isSaving || isReadOnly || selectedPreset !== 'custom'}
                       className={customValues[hole] > 1 ? 'turbo-active' : ''}
+                      aria-label={`ตัวคูณหลุม ${hole}`}
                     >
                       {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
                         <option key={num} value={num}>x{num}</option>
@@ -167,6 +168,7 @@ function TurboConfigModal({ isOpen, onClose, currentTurboValues, onSave, isReadO
                       onChange={(e) => handleCustomChange(hole, e.target.value)}
                       disabled={isSaving || isReadOnly || selectedPreset !== 'custom'}
                       className={customValues[hole] > 1 ? 'turbo-active' : ''}
+                      aria-label={`ตัวคูณหลุม ${hole}`}
                     >
                       {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
                         <option key={num} value={num}>x{num}</option>

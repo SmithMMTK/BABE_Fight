@@ -700,6 +700,7 @@ function GamePlay() {
               <select 
                 value={effectiveViewPlayerId || ''} 
                 onChange={(e) => setViewAsPlayerId(e.target.value ? parseInt(e.target.value) : null)}
+                aria-label="เลือกมุมมองผู้เล่น"
                 style={{
                   marginTop: '0.5rem',
                   padding: '0.5rem 0.75rem',
@@ -725,6 +726,7 @@ function GamePlay() {
           <button 
             className="btn-hamburger-menu" 
             onClick={() => setShowHamburgerMenu(!showHamburgerMenu)}
+            aria-label="เปิดเมนู"
           >
             <div className="hamburger-icon">
               <span></span>

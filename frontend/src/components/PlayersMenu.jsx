@@ -103,6 +103,7 @@ function PlayersMenu({
                   value={newPlayerRole}
                   onChange={(e) => setNewPlayerRole(e.target.value)}
                   className="role-select"
+                  aria-label="เลือกบทบาท"
                 >
                   <option value="player">Guest</option>
                   <option value="host">Host</option>
