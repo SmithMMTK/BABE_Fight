@@ -58,6 +58,14 @@ export function setupGameSocket(io) {
       });
     });
 
+    // Animal scores updated
+    socket.on('animal-update', ({ gameId, holeNumber }) => {
+      // Broadcast to everyone in the game
+      io.to(`game-${gameId}`).emit('animal-updated', {
+        holeNumber
+      });
+    });
+
     socket.on('disconnect', () => {
     });
   });

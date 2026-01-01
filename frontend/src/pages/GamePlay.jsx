@@ -8,7 +8,10 @@ import { calculateStrokeAllocation, getStrokeDisplay, allocateStrokesFor9Holes }
 // Lazy load modals - loaded only when needed
 const ScoringConfigModal = lazy(() => import('../components/ScoringConfigModal'));
 const TurboConfigModal = lazy(() => import('../components/TurboConfigModal'));
+const AnimalInputModal = lazy(() => import('../components/AnimalInputModal'));
+const AnimalSummaryModal = lazy(() => import('../components/AnimalSummaryModal'));
 import { calculateH2HScoring, formatH2HDebugOutput } from '../utils/h2hScoring';
+import { calculateAnimalScores } from '../utils/animalScoring';
 import './GamePlay.css';
 
 function GamePlay() {
@@ -37,6 +40,10 @@ function GamePlay() {
   const [scoringConfig, setScoringConfig] = useState(null); // H2H scoring configuration (hole-in-one, eagle, birdie, par or worse)
   const [showScoringConfigModal, setShowScoringConfigModal] = useState(false);
   const [editingScoreCell, setEditingScoreCell] = useState(null); // {playerId, holeNumber} for cell being edited
+  const [animalScores, setAnimalScores] = useState([]); // Animal penalty scores
+  const [showAnimalModal, setShowAnimalModal] = useState(false);
+  const [selectedAnimalHole, setSelectedAnimalHole] = useState(null);
+  const [showAnimalSummary, setShowAnimalSummary] = useState(false);
 
   // Get session from localStorage or location.state
   const getSession = () => {
@@ -116,6 +123,7 @@ function GamePlay() {
       socket.on('player-added', handlePlayerAdded);
       socket.on('player-removed', handlePlayerRemoved);
       socket.on('scoring-config-updated', handleScoringConfigUpdate);
+      socket.on('animal-updated', handleAnimalUpdate);
 
       return () => {
         socket.off('score-updated', handleScoreUpdate);
@@ -126,6 +134,7 @@ function GamePlay() {
         socket.off('player-added', handlePlayerAdded);
         socket.off('player-removed', handlePlayerRemoved);
         socket.off('scoring-config-updated', handleScoringConfigUpdate);
+        socket.off('animal-updated', handleAnimalUpdate);
       };
     }
   }, [socket, gameId]);
@@ -149,6 +158,10 @@ function GamePlay() {
         if (s.hole_number) scoresMap[s.player_id][s.hole_number] = s.score;
       });
       setScores(scoresMap);
+
+      // Load animal scores
+      const animalResponse = await api.getAnimalScores(gameId);
+      setAnimalScores(animalResponse.data.animalScores || []);
 
       setLoading(false);
     } catch (err) {
@@ -332,6 +345,16 @@ function GamePlay() {
     setScoringConfig(config);
   };
 
+  const handleAnimalUpdate = async ({ holeNumber }) => {
+    // Reload animal scores when updated by another player
+    try {
+      const animalResponse = await api.getAnimalScores(gameId);
+      setAnimalScores(animalResponse.data.animalScores || []);
+    } catch (err) {
+      console.error('Failed to reload animal scores:', err);
+    }
+  };
+
   // Player management functions
   const handleAddPlayer = async (username, role) => {
     try {
@@ -415,6 +438,55 @@ function GamePlay() {
       console.error('Failed to save scoring config:', err);
       throw err; // Re-throw for modal to handle
     }
+  };
+
+  const handleSaveAnimalScores = async (holeNumber, animalCounts) => {
+    try {
+      // Send all players' scores in one request
+      await api.updateAnimalScores(gameId, {
+        holeNumber,
+        animals: animalCounts // { playerId: { animalType: count } }
+      });
+
+      // Reload animal scores
+      const animalResponse = await api.getAnimalScores(gameId);
+      setAnimalScores(animalResponse.data.animalScores || []);
+
+      // Broadcast to others via socket
+      if (socket) {
+        socket.emit('animal-update', { gameId, holeNumber });
+      }
+    } catch (err) {
+      console.error('Failed to save animal scores:', err);
+      alert('ไม่สามารถบันทึกคะแนน Animal ได้');
+    }
+  };
+
+  // Single click handler for animal modal
+  const handleOpenAnimalModal = (holeNumber) => {
+    setSelectedAnimalHole(holeNumber);
+    setShowAnimalModal(true);
+  };
+
+  // Get animal indicator for a player on a specific hole
+  const getAnimalIndicator = (playerId, holeNumber) => {
+    // Find all animal scores for this player on this hole
+    const holeAnimalScores = animalScores.filter(
+      score => score.player_id === playerId && score.hole_number === holeNumber
+    );
+    
+    if (holeAnimalScores.length === 0) return null;
+    
+    // Calculate total animal penalty with turbo multiplier
+    const turbo = turboValues[holeNumber] || 1;
+    const totalPenalty = holeAnimalScores.reduce((sum, score) => sum + (score.count * turbo), 0);
+    
+    if (totalPenalty === 0) return null;
+    
+    return {
+      penalty: totalPenalty,
+      display: totalPenalty === 1 ? 'a' : `a+${totalPenalty}`
+    };
   };
 
   const updateScore = async (playerId, holeNumber, score) => {
@@ -794,6 +866,16 @@ function GamePlay() {
                   className="hamburger-menu-item"
                   onClick={() => {
                     setShowHamburgerMenu(false);
+                    setShowAnimalSummary(true);
+                  }}
+                >
+                  <span className="menu-icon">🐾</span>
+                  <span>สรุป Animal Scores</span>
+                </button>
+                <button 
+                  className="hamburger-menu-item"
+                  onClick={() => {
+                    setShowHamburgerMenu(false);
                     setShowVersionModal(true);
                   }}
                 >
@@ -843,6 +925,66 @@ function GamePlay() {
                           formatH2HDebugOutput(result);
                         });
                       });
+                    }
+                    
+                    // Animal Scores Debug
+                    console.log('\n=== Animal Scores Summary ===');
+                    if (sortedPlayers.length > 0) {
+                      const animalTypes = [
+                        { type: 'monkey', label: 'Monkey', emoji: '🐒' },
+                        { type: 'giraffe', label: 'Giraffe', emoji: '🦒' },
+                        { type: 'snake', label: 'Snake', emoji: '🐍' },
+                        { type: 'camel', label: 'Camel', emoji: '🐪' },
+                        { type: 'frog', label: 'Frog', emoji: '🐸' },
+                        { type: 'monitor_lizard', label: 'Monitor Lizard', emoji: '🐊' }
+                      ];
+                      
+                      sortedPlayers.forEach(player => {
+                        console.log(`\n${player.username}:`);
+                        let totalAnimals = 0;
+                        let totalPenalty = 0;
+                        const animalBreakdown = {};
+                        
+                        // Calculate per animal type
+                        animalTypes.forEach(animal => {
+                          let count = 0;
+                          let penalty = 0;
+                          
+                          for (let hole = 1; hole <= 18; hole++) {
+                            if (animalScores[hole] && animalScores[hole][player.id] && animalScores[hole][player.id][animal.type]) {
+                              const animalCount = animalScores[hole][player.id][animal.type];
+                              const turbo = turboValues[hole] || 1;
+                              count += animalCount;
+                              penalty += animalCount * turbo;
+                            }
+                          }
+                          
+                          if (count > 0) {
+                            animalBreakdown[animal.type] = { count, penalty };
+                            totalAnimals += count;
+                            totalPenalty += penalty;
+                          }
+                        });
+                        
+                        // Display breakdown
+                        animalTypes.forEach(animal => {
+                          if (animalBreakdown[animal.type]) {
+                            const { count, penalty } = animalBreakdown[animal.type];
+                            console.log(`  ${animal.emoji} ${animal.label}: ${count} animals → +${penalty} penalty`);
+                          }
+                        });
+                        
+                        console.log(`  Total: ${totalAnimals} animals → +${totalPenalty} penalty points`);
+                      });
+                      
+                      // Show holes with turbo multipliers
+                      const turboHoles = Object.keys(turboValues).filter(h => turboValues[h] > 1);
+                      if (turboHoles.length > 0) {
+                        console.log('\n=== Turbo Holes ===');
+                        turboHoles.forEach(hole => {
+                          console.log(`  Hole ${hole}: ${turboValues[hole]}x multiplier`);
+                        });
+                      }
                     }
                   }}
                 >
@@ -1013,15 +1155,20 @@ function GamePlay() {
                 <tr key={idx} className={turboValues[hole.hole] > 1 ? 'turbo-row' : ''}>
                   <td 
                     className="hole-par-col-vertical"
+                    onClick={() => handleOpenAnimalModal(hole.hole)}
                     style={{ 
                       position: 'relative', 
                       userSelect: 'none',
                       WebkitTouchCallout: 'none',
-                      WebkitUserSelect: 'none'
+                      WebkitUserSelect: 'none',
+                      cursor: 'pointer'
                     }}
+                    title="Click to add animal scores"
                   >
                     <div className="hole-par-combined">
-                      <div className="hole-number-vertical">
+                      <div 
+                        className="hole-number-vertical"
+                      >
                         {hole.hole}
                         {turboValues[hole.hole] > 1 && <span className="turbo-badge">x{turboValues[hole.hole]}</span>}
                       </div>
@@ -1077,7 +1224,7 @@ function GamePlay() {
                               </div>
                             );
                           })()}
-                          {/* Numeric handicap indicator */}
+                          {/* Numeric handicap indicator (top-right) */}
                           {strokeIndicator && (
                             <div 
                               className="handicap-indicator"
@@ -1096,6 +1243,30 @@ function GamePlay() {
                               {strokeIndicator.count}
                             </div>
                           )}
+                          {/* Animal indicator (bottom-left) */}
+                          {(() => {
+                            const animalIndicator = getAnimalIndicator(player.id, hole.hole);
+                            if (!animalIndicator) return null;
+                            
+                            return (
+                              <div 
+                                className="animal-indicator"
+                                style={{
+                                  position: 'absolute',
+                                  bottom: '2px',
+                                  left: '2px',
+                                  fontSize: '0.75rem',
+                                  fontWeight: 'bold',
+                                  color: '#ff9800',
+                                  zIndex: 2,
+                                  lineHeight: 1,
+                                  pointerEvents: 'none'
+                                }}
+                              >
+                                {animalIndicator.display}
+                              </div>
+                            );
+                          })()}
                           {scores[player.id]?.[hole.hole] ? (
                             <div 
                               className={`score-display ${getScoreClass(scores[player.id][hole.hole], hole.par)}`}
@@ -1200,6 +1371,31 @@ function GamePlay() {
                   );
                 })}
               </tr>
+              {/* Front 9 - Animal Score */}
+              <tr className="total-row animal-total-row">
+                <td className="hole-par-col-vertical" style={{ fontSize: '0.85rem' }}>
+                  <div>Animal</div>
+                </td>
+                {sortedPlayers.map((player, index) => {
+                  const animalCalculated = calculateAnimalScores(animalScores, players, turboValues);
+                  const playerAnimal = animalCalculated[player.id];
+                  const animalTotal = playerAnimal ? playerAnimal.totalFront9 : 0;
+                  
+                  return (
+                    <td key={player.id} className={`total-cell ${index === 0 ? 'focus-player' : ''}`}>
+                      {animalTotal > 0 && (
+                        <span style={{
+                          fontSize: '1rem',
+                          fontWeight: 'bold',
+                          color: '#ff6b6b'
+                        }}>
+                          {animalTotal}
+                        </span>
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
             </tbody>
           </table>
 
@@ -1249,15 +1445,20 @@ function GamePlay() {
                 <tr key={idx} className={turboValues[hole.hole] > 1 ? 'turbo-row' : ''}>
                   <td 
                     className="hole-par-col-vertical"
+                    onClick={() => handleOpenAnimalModal(hole.hole)}
                     style={{ 
                       position: 'relative', 
                       userSelect: 'none',
                       WebkitTouchCallout: 'none',
-                      WebkitUserSelect: 'none'
+                      WebkitUserSelect: 'none',
+                      cursor: 'pointer'
                     }}
+                    title="Click to add animal scores"
                   >
                     <div className="hole-par-combined">
-                      <div className="hole-number-vertical">
+                      <div 
+                        className="hole-number-vertical"
+                      >
                         {hole.hole}
                         {turboValues[hole.hole] > 1 && <span className="turbo-badge">x{turboValues[hole.hole]}</span>}
                       </div>
@@ -1313,7 +1514,7 @@ function GamePlay() {
                               </div>
                             );
                           })()}
-                          {/* Numeric handicap indicator */}
+                          {/* Numeric handicap indicator (top-right) */}
                           {strokeIndicator && (
                             <div 
                               className="handicap-indicator"
@@ -1332,6 +1533,30 @@ function GamePlay() {
                               {strokeIndicator.count}
                             </div>
                           )}
+                          {/* Animal indicator (bottom-left) */}
+                          {(() => {
+                            const animalIndicator = getAnimalIndicator(player.id, hole.hole);
+                            if (!animalIndicator) return null;
+                            
+                            return (
+                              <div 
+                                className="animal-indicator"
+                                style={{
+                                  position: 'absolute',
+                                  bottom: '2px',
+                                  left: '2px',
+                                  fontSize: '0.75rem',
+                                  fontWeight: 'bold',
+                                  color: '#ff9800',
+                                  zIndex: 2,
+                                  lineHeight: 1,
+                                  pointerEvents: 'none'
+                                }}
+                              >
+                                {animalIndicator.display}
+                              </div>
+                            );
+                          })()}
                           {scores[player.id]?.[hole.hole] ? (
                             <div 
                               className={`score-display ${getScoreClass(scores[player.id][hole.hole], hole.par)}`}
@@ -1436,6 +1661,31 @@ function GamePlay() {
                   );
                 })}
               </tr>
+              {/* Back 9 - Animal Score */}
+              <tr className="total-row animal-total-row">
+                <td className="hole-par-col-vertical" style={{ fontSize: '0.85rem' }}>
+                  <div>Animal</div>
+                </td>
+                {sortedPlayers.map((player, index) => {
+                  const animalCalculated = calculateAnimalScores(animalScores, players, turboValues);
+                  const playerAnimal = animalCalculated[player.id];
+                  const animalTotal = playerAnimal ? playerAnimal.totalBack9 : 0;
+                  
+                  return (
+                    <td key={player.id} className={`total-cell ${index === 0 ? 'focus-player' : ''}`}>
+                      {animalTotal > 0 && (
+                        <span style={{
+                          fontSize: '1rem',
+                          fontWeight: 'bold',
+                          color: '#ff6b6b'
+                        }}>
+                          {animalTotal}
+                        </span>
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
               {/* Grand Total - Gross Score with O/U Par */}
               <tr className="total-row final-row">
                 <td className="hole-par-col-vertical"><strong>Total</strong></td>
@@ -1518,6 +1768,34 @@ function GamePlay() {
                   );
                 })}
               </tr>
+              {/* Grand Total - Animal Score */}
+              <tr className="total-row animal-total-row animal-grand-total">
+                <td className="hole-par-col-vertical" style={{ fontSize: '0.9rem' }}>
+                  <div style={{lineHeight: '1.2'}}>
+                    <div>Animal</div>
+                    <div>Total</div>
+                  </div>
+                </td>
+                {sortedPlayers.map((player, index) => {
+                  const animalCalculated = calculateAnimalScores(animalScores, players, turboValues);
+                  const playerAnimal = animalCalculated[player.id];
+                  const animalTotal = playerAnimal ? playerAnimal.grandTotal : 0;
+                  
+                  return (
+                    <td key={player.id} className={`total-cell ${index === 0 ? 'focus-player' : ''}`}>
+                      {animalTotal > 0 && (
+                        <span style={{
+                          fontSize: '1.2rem',
+                          fontWeight: '700',
+                          color: '#ff9800'
+                        }}>
+                          {animalTotal}
+                        </span>
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
             </tbody>
           </table>
         </div>
@@ -1543,6 +1821,30 @@ function GamePlay() {
           isReadOnly={!isHost}
         />
       </Suspense>
+
+      {/* Animal Input Modal */}
+      <Suspense fallback={<div>Loading...</div>}>
+        <AnimalInputModal
+          isOpen={showAnimalModal}
+          onClose={() => setShowAnimalModal(false)}
+          holeNumber={selectedAnimalHole}
+          players={sortedPlayers}
+          currentAnimalScores={animalScores}
+          onSave={handleSaveAnimalScores}
+        />
+      </Suspense>
+
+      {/* Animal Summary Modal */}
+      {showAnimalSummary && (
+        <Suspense fallback={<div>Loading...</div>}>
+          <AnimalSummaryModal
+            players={sortedPlayers}
+            animalScores={animalScores}
+            turboValues={turboValues}
+            onClose={() => setShowAnimalSummary(false)}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

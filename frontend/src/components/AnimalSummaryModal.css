@@ -1,0 +1,335 @@
+.animal-summary-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  padding: 20px;
+}
+
+.animal-summary-panel {
+  background: white;
+  border-radius: 12px;
+  max-width: 95%;
+  max-height: 90vh;
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.animal-summary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.animal-summary-header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #333;
+}
+
+.btn-close-animal-summary {
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+  cursor: pointer;
+  color: #666;
+  padding: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.btn-close-animal-summary:hover {
+  background-color: #f0f0f0;
+}
+
+.animal-summary-content {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.animal-summary-table-wrapper {
+  overflow-x: auto;
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+.animal-summary-table {
+  width: 100%;
+  min-width: 600px;
+  border-collapse: collapse;
+  font-size: 1rem;
+  background: white;
+  table-layout: fixed;
+}
+
+.animal-summary-table thead {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.animal-summary-table th {
+  padding: 14px 10px;
+  text-align: center;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 0.95rem;
+  color: white !important;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.animal-summary-table .animal-type-col {
+  text-align: left;
+  width: 180px;
+  min-width: 180px;
+  font-weight: 600;
+  padding-left: 16px;
+}
+
+.animal-summary-table .player-col {
+  text-align: center;
+  width: 120px;
+  min-width: 120px;
+  font-weight: 600;
+  padding: 14px 12px;
+}
+
+.animal-summary-table .animal-count-col {
+  text-align: center;
+  width: 120px;
+  min-width: 120px;
+}
+
+.animal-summary-table .total-col {
+  text-align: center;
+  width: 120px;
+  min-width: 120px;
+  background: rgba(255, 255, 255, 0.1);
+  font-weight: bold;
+}
+
+.animal-type-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+}
+
+.animal-emoji {
+  font-size: 1.8rem;
+  flex-shrink: 0;
+}
+
+.animal-label {
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: #333;
+}
+
+.animal-summary-table tbody tr {
+  border-bottom: 1px solid #e0e0e0;:not(.total-row) {
+  background-color: #f8f9fa;
+}
+
+.animal-summary-table tbody tr:last-child {
+  border-top: 3px solid #667eea;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+}
+
+.animal-summary-table tbody tr.total-row {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.animal-summary-table td {
+  padding: 14px 10px;
+  text-align: center;
+  border: 1px solid #e0e0e0;
+  vertical-align: middle;
+}
+
+.animal-summary-table .animal-type-col {
+  text-align: left;
+  padding-left: 16pxd #e0e0e0;
+}
+
+.animal-summary-table .animal-type-col {
+  text-align: left;
+}flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 6px 14px;
+  border-radius: 16px;
+  font-weight: 700;
+  min-width: 36px;
+  font-size: 1rem;
+  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+}
+
+.animal-count-zero {
+  color: #ccc;
+  font-size: 1.2rem;
+  font-weight: 300;
+}
+
+.total-penalty {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  color: #333;
+  padding: 6px 14px;
+  border-radius: 16px;
+  font-weight: 700;
+  min-width: 40px;
+  font-size: 1.05rem;
+  box-shadow: 0 2px 4px rgba(250, 112, 154, 0.3)px;
+  font-weight: 700;
+  min-width: 36px;
+  font-size: 1.1rem;
+}
+
+.animal-summary-note {
+  background: #f8f9fa;
+  border-left: 4px solid #667eea;
+  padding: 12px 16px;
+  border-radius: 4px;
+  margin-top: 10px;
+}
+
+.animal-summary-note p {
+  margin: 0;
+  color: #666;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .animal-summary-panel {
+    width: 100%;
+    max-width: 100%;
+    max-height: 95vh;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .animal-summary-header h3 {
+    font-size: 1.2rem;
+  }
+
+  .animal-summary-table {
+    font-size: 0.85rem;
+  }
+
+  .animal-summary-table th,
+  .animal-summary-table td {
+    padding: 8px 4px;
+  }
+
+  .animal-summary-table .player-col {
+    min-width: 100px;
+    max-width: 120px;
+  }
+animal-type-col {
+    min-width: 120px;
+    max-width: 140px;
+  }
+
+  .animal-summary-table .player-col {
+    min-width: 80px;
+    max-width: 100px;
+  }
+
+  .animal-summary-table .animal-count-col {
+    min-width: 60px;
+  }
+
+  .animal-emoji {
+    font-size: 1.2rem;
+  }
+
+  .animal-label {
+    font-size: 0.85
+  .total-penalty {
+    padding: 3px 8px;
+    font-size: 0.85rem;
+    min-width: 28px;
+  }
+}
+
+@media (max-width: 480px) {
+  .animal-summary-header h3 {
+    font-size: 1rem;
+  }
+
+  .animal-summary-table {
+    font-size: 0.75rem;animal-type-col {
+    min-width: 100px;
+    max-width: 120px;
+  }
+
+  .animal-summary-table .player-col {
+    min-width: 70px;
+    max-width: 90px;
+  }
+
+  .animal-summary-table .animal-count-col {
+    min-width: 55px;
+  }
+
+  .animal-emoji {
+    font-size: 1rem;
+  }
+
+  .animal-label {
+    font-size: 0.75
+
+  .animal-summary-table .animal-col {
+    min-width: 45px;
+    width: 50px;
+  }
+
+  .animal-emoji {
+    font-size: 1rem;
+  }
+
+  .animal-count,
+  .total-animals,
+  .total-penalty {
+    padding: 2px 6px;
+    font-size: 0.75rem;
+    min-width: 24px;
+  }
+
+  .animal-summary-note {
+    padding: 10px 12px;
+  }
+
+  .animal-summary-note p {
+    font-size: 0.8rem;
+  }
+}

@@ -846,6 +846,17 @@
   padding: 0.75rem 0.125rem;
 }
 
+/* Animal Total Rows Highlighting */
+.total-row.animal-total-row {
+  background: #ffe4e1;
+  border-top: 2px solid #ff6b6b;
+}
+
+.total-row.animal-total-row td {
+  color: #ff6b6b;
+  font-weight: 700;
+}
+
 .total-row.final-row {
   background: var(--color-primary);
   color: white;

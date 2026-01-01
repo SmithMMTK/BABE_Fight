@@ -1,0 +1,378 @@
+/* Animal Input Modal Styles */
+.animal-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+  padding: 0.5rem;
+}
+
+.animal-modal-content {
+  background: white;
+  border-radius: 12px;
+  max-width: 98vw;
+  max-height: 95vh;
+  width: auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.animal-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.animal-modal-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.btn-close-animal {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  line-height: 1;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.btn-close-animal:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: rotate(90deg);
+}
+
+.animal-modal-body {
+  flex: 1;
+  overflow: auto;
+  padding: 0.75rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Animal Grid Layout */
+.animal-grid {
+  display: block;
+  width: max-content;
+  min-width: 100%;
+}
+
+.animal-grid-header {
+  display: flex;
+  background: var(--color-primary);
+  color: white;
+  font-weight: 700;
+  border-radius: 8px 8px 0 0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.animal-type-header,
+.player-header {
+  padding: 0.5rem 0.25rem;
+  text-align: center;
+  font-size: 0.85rem;
+  background: var(--color-primary);
+  white-space: nowrap;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+}
+
+.animal-type-header {
+  font-size: 0.75rem;
+  width: 60px;
+}
+
+.player-header {
+  width: 80px;
+}
+
+.player-header:last-child {
+  border-right: none;
+}
+
+/* Animal Rows */
+.animal-row {
+  display: flex;
+  border-bottom: 1px solid #e0e0e0;
+  background: white;
+}
+
+.animal-row:nth-child(even) {
+  background: #f8f9fa;
+}
+
+.animal-row:last-child {
+  border-radius: 0 0 8px 8px;
+}
+
+.animal-type-cell {
+  width: 60px;
+  padding: 0.5rem;
+  text-align: center;
+  background: #f8f9fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid #e0e0e0;
+  flex-shrink: 0;
+}
+
+.animal-emoji-large {
+  font-size: 2.5rem;
+  line-height: 1;
+  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.animal-name {
+  display: none;
+}
+
+/* Animal Count Controls */
+.animal-count-cell {
+  width: 80px;
+  padding: 0.75rem 0.5rem;
+  text-align: center;
+  background: white;
+  position: relative;
+  border-right: 1px solid #e0e0e0;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.animal-count-cell:last-child {
+  border-right: none;
+}
+
+.animal-count-display {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  min-width: 50px;
+  min-height: 50px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 2px solid var(--color-primary);
+  border-radius: 8px;
+  background: #f0f4ff;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.animal-count-display:hover {
+  background: var(--color-primary);
+  color: white;
+  transform: scale(1.05);
+}
+
+.animal-count-display:active {
+  transform: scale(0.95);
+}
+
+/* Number Picker Dropdown */
+.number-picker-dropdown {
+  position: absolute;
+  top: calc(100% - 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  border: 2px solid var(--color-primary);
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  max-height: 200px;
+  overflow: hidden;
+}
+
+.number-picker-scroll {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  max-height: 200px;
+}
+
+.number-option {
+  padding: 0.75rem 2rem;
+  border: none;
+  background: white;
+  font-size: 1.3rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-bottom: 1px solid #e0e0e0;
+  color: var(--color-text);
+  text-align: center;
+  min-width: 80px;
+}
+
+.number-option:hover {
+  background: #f0f4ff;
+  color: var(--color-primary);
+}
+
+.number-option.selected {
+  background: var(--color-primary);
+  color: white;
+  font-weight: 700;
+}
+
+.number-option:last-child {
+  border-bottom: none;
+}
+
+.btn-decrement {
+  background: #e0e0e0;
+  color: #666;
+}
+
+.btn-increment {
+  background: var(--color-primary);
+  color: white;
+}
+
+.btn-decrement:hover:not(:disabled) {
+  background: #d0d0d0;
+  transform: scale(1.05);
+}
+
+.btn-increment:hover:not(:disabled) {
+  background: #34495e;
+  transform: scale(1.05);
+}
+
+.btn-decrement:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.btn-decrement:active:not(:disabled),
+.btn-increment:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+/* Modal Footer */
+.animal-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-top: 2px solid #e0e0e0;
+  background: #f8f9fa;
+}
+
+.btn-cancel,
+.btn-save {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  min-width: 100px;
+}
+
+.btn-cancel {
+  background: #e0e0e0;
+  color: var(--color-text);
+}
+
+.btn-cancel:hover {
+  background: #d0d0d0;
+}
+
+.btn-save {
+  background: var(--color-primary);
+  color: white;
+}
+
+.btn-save:hover {
+  background: #34495e;
+}
+  background: #34495e;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .animal-modal-content {
+    max-width: 100vw;
+    max-height: 100vh;
+    border-radius: 0;
+    width: 100vw;
+    height: 100vh;
+  }
+
+  .animal-modal-header {
+    border-radius: 0;
+  }
+
+  .animal-modal-header h2 {
+    font-size: 1.2rem;
+  }
+
+  .animal-grid-header,
+  .animal-row {
+    grid-template-columns: 140px repeat(auto-fit, minmax(90px, 1fr));
+  }
+
+  .animal-emoji-large {
+    font-size: 2.5rem;
+  }
+
+  .animal-name {
+    font-size: 1rem;
+  }
+
+  .btn-decrement,
+  .btn-increment {
+    width: 36px;
+    height: 36px;
+    font-size: 1.5rem;
+  }
+
+  .animal-count {
+    font-size: 1.5rem;
+    min-width: 30px;
+  }
+
+  .animal-type-header,
+  .player-header {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .animal-type-cell {
+    gap: 0.5rem;
+    padding: 0.75rem;
+  }
+
+  .animal-count-cell {
+    gap: 0.5rem;
+    padding: 0.75rem 0.5rem;
+  }
+}

@@ -1,32 +1,37 @@
 import sql from 'mssql';
-import dotenv from 'dotenv';
 
-dotenv.config();
-
-// Database configuration
-const config = {
-  user: process.env.DB_USER || 'sqladmin',
-  password: process.env.DB_PASSWORD,
-  server: process.env.DB_SERVER,
-  database: process.env.DB_NAME,
-  options: {
-    encrypt: true,
-    trustServerCertificate: false,
-    connectTimeout: 30000,
-    requestTimeout: 30000,
-  },
-  pool: {
-    max: 10,
-    min: 0,
-    idleTimeoutMillis: 30000,
-  },
-};
+// Database configuration - function to read env at runtime
+function getConfig() {
+  return {
+    user: process.env.DB_USER || 'sqladmin',
+    password: process.env.DB_PASSWORD,
+    server: process.env.DB_SERVER,
+    database: process.env.DB_NAME,
+    options: {
+      encrypt: true,
+      trustServerCertificate: false,
+      connectTimeout: 30000,
+      requestTimeout: 30000,
+    },
+    pool: {
+      max: 10,
+      min: 0,
+      idleTimeoutMillis: 30000,
+    },
+  };
+}
 
 // Create connection pool
 let pool;
 
 async function getPool() {
   if (!pool) {
+    const config = getConfig();
+    console.log('🔄 Creating pool with config:', {
+      server: config.server,
+      database: config.database,
+      user: config.user
+    });
     pool = await sql.connect(config);
   }
   return pool;
@@ -189,7 +194,47 @@ const db = {
   },
 };
 
-// Initialize on module load
-await initializeDatabase();
+// Initialize database (called manually, not automatically)
+let initialized = false;
 
-export default db;
+async function ensureInitialized() {
+  if (!initialized) {
+    try {
+      console.log('🔄 Initializing database connection...');
+      console.log('DB Config:', {
+        server: process.env.DB_SERVER,
+        database: process.env.DB_NAME,
+        user: process.env.DB_USER,
+        hasPassword: !!process.env.DB_PASSWORD
+      });
+      await initializeDatabase();
+      console.log('✅ Database initialized successfully');
+      initialized = true;
+    } catch (error) {
+      console.error('❌ Database initialization error:', error.message);
+      throw error;
+    }
+  }
+}
+
+// Wrap db methods to ensure initialization
+const wrappedDb = {
+  async all(query, params) {
+    await ensureInitialized();
+    return db.all(query, params);
+  },
+  async get(query, params) {
+    await ensureInitialized();
+    return db.get(query, params);
+  },
+  async run(query, params) {
+    await ensureInitialized();
+    return db.run(query, params);
+  },
+  async getLastInsertId() {
+    await ensureInitialized();
+    return db.getLastInsertId();
+  },
+};
+
+export default wrappedDb;

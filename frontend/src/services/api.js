@@ -73,6 +73,11 @@ export const api = {
   getScoringConfig: (gameId) => axios.get(`${API_URL}/games/${gameId}/scoring-config`),
   updateScoringConfig: (gameId, config, playerId) => axios.put(`${API_URL}/games/${gameId}/scoring-config`, { ...config, playerId }),
   
+  // Animal Scores
+  getAnimalScores: (gameId) => axios.get(`${API_URL}/games/${gameId}/animals`),
+  updateAnimalScores: (gameId, data) => axios.post(`${API_URL}/games/${gameId}/animals`, data),
+  clearAnimalScores: (gameId, holeNumber) => axios.delete(`${API_URL}/games/${gameId}/animals/${holeNumber}`),
+  
   // Version
   getVersion: () => axios.get(`${API_URL}/version`)
 };
