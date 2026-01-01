@@ -235,6 +235,9 @@ const wrappedDb = {
     await ensureInitialized();
     return db.getLastInsertId();
   },
+  getPool() {
+    return db.getPool();
+  },
 };
 
 export default wrappedDb;
