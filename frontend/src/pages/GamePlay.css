@@ -69,7 +69,7 @@
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
   flex-shrink: 0;
   transition: all 0.2s ease;
   font-size: 0.9rem;
@@ -92,22 +92,34 @@
   line-height: 1;
 }
 
+.toggle-label {
+  font-size: 0.75rem;
+  opacity: 0.9;
+  font-weight: 500;
+}
+
 .toggle-text {
   white-space: nowrap;
+  font-weight: 700;
+  font-size: 0.95rem;
 }
 
 @media (max-width: 768px) {
   .btn-toggle-holes {
     padding: 0.5rem 0.75rem;
-    font-size: 0.85rem;
+    gap: 0.3rem;
   }
   
-  .toggle-text {
+  .toggle-label {
     display: none;
   }
   
+  .toggle-text {
+    font-size: 0.8rem;
+  }
+  
   .toggle-icon {
-    font-size: 1.5rem;
+    font-size: 1.1rem;
   }
 }
 

@@ -830,10 +830,11 @@ function GamePlay() {
             className="btn-toggle-holes"
             onClick={() => setShowBackNineFirst(!showBackNineFirst)}
             aria-label="สลับลำดับการแสดงหลุม"
-            title={showBackNineFirst ? 'แสดง 1-9 → 10-18' : 'แสดง 10-18 → 1-9'}
+            title="กดเพื่อสลับลำดับหลุม"
           >
             <span className="toggle-icon">🔄</span>
-            <span className="toggle-text">{showBackNineFirst ? '10-18 → 1-9' : '1-9 → 10-18'}</span>
+            <span className="toggle-label">แสดง:</span>
+            <span className="toggle-text">{showBackNineFirst ? 'Back-Front' : 'Front-Back'}</span>
           </button>
           <button 
             className="btn-hamburger-menu" 
