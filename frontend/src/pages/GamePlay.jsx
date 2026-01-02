@@ -44,6 +44,7 @@ function GamePlay() {
   const [showAnimalModal, setShowAnimalModal] = useState(false);
   const [selectedAnimalHole, setSelectedAnimalHole] = useState(null);
   const [showAnimalSummary, setShowAnimalSummary] = useState(false);
+  const [showBackNineFirst, setShowBackNineFirst] = useState(false); // Toggle front/back nine display order
 
   // Get session from localStorage or location.state
   const getSession = () => {
@@ -875,6 +876,16 @@ function GamePlay() {
                 <button 
                   className="hamburger-menu-item"
                   onClick={() => {
+                    setShowBackNineFirst(!showBackNineFirst);
+                    setShowHamburgerMenu(false);
+                  }}
+                >
+                  <span className="menu-icon">🔄</span>
+                  <span>{showBackNineFirst ? 'แสดง 1-9 → 10-18' : 'แสดง 10-18 → 1-9'}</span>
+                </button>
+                <button 
+                  className="hamburger-menu-item"
+                  onClick={() => {
                     setShowHamburgerMenu(false);
                     setShowVersionModal(true);
                   }}
@@ -1109,7 +1120,7 @@ function GamePlay() {
 
       <div className="scorecard-container">
         <div className="scorecard-scroll">
-          {/* Front 9 */}
+          {/* First Nine (Front or Back depending on toggle) */}
           <table className="scorecard vertical">
             <thead>
               <tr>
@@ -1151,7 +1162,7 @@ function GamePlay() {
               </tr>
             </thead>
             <tbody>
-              {course.holes.slice(0, 9).map((hole, idx) => (
+              {course.holes.slice(showBackNineFirst ? 9 : 0, showBackNineFirst ? 18 : 9).map((hole, idx) => (
                 <tr key={idx} className={turboValues[hole.hole] > 1 ? 'turbo-row' : ''}>
                   <td 
                     className="hole-par-col-vertical"
@@ -1301,7 +1312,7 @@ function GamePlay() {
                   // Calculate Over/Under Par
                   let overUnderPar = 0;
                   let completedHoles = 0;
-                  course.holes.slice(0, 9).forEach(hole => {
+                  course.holes.slice(showBackNineFirst ? 9 : 0, showBackNineFirst ? 18 : 9).forEach(hole => {
                     const score = scores[player.id]?.[hole.hole];
                     if (score && score > 0) {
                       overUnderPar += (score - hole.par);
@@ -1340,7 +1351,7 @@ function GamePlay() {
                   );
                 })}
               </tr>
-              {/* Front 9 - H2H Score */}
+              {/* First Nine - H2H Score */}
               <tr className="total-row h2h-total-row">
                 <td className="hole-par-col-vertical" style={{ fontSize: '0.85rem' }}>
                   <div>H2H</div>
@@ -1349,7 +1360,7 @@ function GamePlay() {
                   let h2hText = '';
                   if (index > 0 && sortedPlayers.length > 1) {
                     const viewPlayer = sortedPlayers[0];
-                    const h2hTotal = getH2HTotalForHoles(viewPlayer.id, player.id, 1, 9);
+                    const h2hTotal = getH2HTotalForHoles(viewPlayer.id, player.id, showBackNineFirst ? 10 : 1, showBackNineFirst ? 18 : 9);
                     if (h2hTotal !== 0) {
                       const sign = h2hTotal > 0 ? '+' : '';
                       h2hText = `${sign}${h2hTotal}`;
@@ -1371,7 +1382,7 @@ function GamePlay() {
                   );
                 })}
               </tr>
-              {/* Front 9 - Animal Score */}
+              {/* First Nine - Animal Score */}
               <tr className="total-row animal-total-row">
                 <td className="hole-par-col-vertical" style={{ fontSize: '0.85rem' }}>
                   <div>Animal</div>
@@ -1379,7 +1390,7 @@ function GamePlay() {
                 {sortedPlayers.map((player, index) => {
                   const animalCalculated = calculateAnimalScores(animalScores, players, turboValues);
                   const playerAnimal = animalCalculated[player.id];
-                  const animalTotal = playerAnimal ? playerAnimal.totalFront9 : 0;
+                  const animalTotal = playerAnimal ? (showBackNineFirst ? playerAnimal.totalBack9 : playerAnimal.totalFront9) : 0;
                   
                   return (
                     <td key={player.id} className={`total-cell ${index === 0 ? 'focus-player' : ''}`}>
@@ -1399,7 +1410,7 @@ function GamePlay() {
             </tbody>
           </table>
 
-          {/* Back 9 */}
+          {/* Second Nine (Back or Front depending on toggle) */}
           <table className="scorecard vertical">
             <thead>
               <tr>
@@ -1441,7 +1452,7 @@ function GamePlay() {
               </tr>
             </thead>
             <tbody>
-              {course.holes.slice(9, 18).map((hole, idx) => (
+              {course.holes.slice(showBackNineFirst ? 0 : 9, showBackNineFirst ? 9 : 18).map((hole, idx) => (
                 <tr key={idx} className={turboValues[hole.hole] > 1 ? 'turbo-row' : ''}>
                   <td 
                     className="hole-par-col-vertical"
@@ -1591,7 +1602,7 @@ function GamePlay() {
                   // Calculate Over/Under Par
                   let overUnderPar = 0;
                   let completedHoles = 0;
-                  course.holes.slice(9, 18).forEach(hole => {
+                  course.holes.slice(showBackNineFirst ? 0 : 9, showBackNineFirst ? 9 : 18).forEach(hole => {
                     const score = scores[player.id]?.[hole.hole];
                     if (score && score > 0) {
                       overUnderPar += (score - hole.par);
@@ -1630,7 +1641,7 @@ function GamePlay() {
                   );
                 })}
               </tr>
-              {/* Back 9 - H2H Score */}
+              {/* Second Nine - H2H Score */}
               <tr className="total-row h2h-total-row">
                 <td className="hole-par-col-vertical" style={{ fontSize: '0.85rem' }}>
                   <div>H2H</div>
@@ -1639,7 +1650,7 @@ function GamePlay() {
                   let h2hText = '';
                   if (index > 0 && sortedPlayers.length > 1) {
                     const viewPlayer = sortedPlayers[0];
-                    const h2hTotal = getH2HTotalForHoles(viewPlayer.id, player.id, 10, 18);
+                    const h2hTotal = getH2HTotalForHoles(viewPlayer.id, player.id, showBackNineFirst ? 1 : 10, showBackNineFirst ? 9 : 18);
                     if (h2hTotal !== 0) {
                       const sign = h2hTotal > 0 ? '+' : '';
                       h2hText = `${sign}${h2hTotal}`;
@@ -1661,7 +1672,7 @@ function GamePlay() {
                   );
                 })}
               </tr>
-              {/* Back 9 - Animal Score */}
+              {/* Second Nine - Animal Score */}
               <tr className="total-row animal-total-row">
                 <td className="hole-par-col-vertical" style={{ fontSize: '0.85rem' }}>
                   <div>Animal</div>
@@ -1669,7 +1680,7 @@ function GamePlay() {
                 {sortedPlayers.map((player, index) => {
                   const animalCalculated = calculateAnimalScores(animalScores, players, turboValues);
                   const playerAnimal = animalCalculated[player.id];
-                  const animalTotal = playerAnimal ? playerAnimal.totalBack9 : 0;
+                  const animalTotal = playerAnimal ? (showBackNineFirst ? playerAnimal.totalFront9 : playerAnimal.totalBack9) : 0;
                   
                   return (
                     <td key={player.id} className={`total-cell ${index === 0 ? 'focus-player' : ''}`}>
