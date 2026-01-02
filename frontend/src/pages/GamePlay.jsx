@@ -537,6 +537,23 @@ function GamePlay() {
       sum + (scores[playerId][hole.hole] || 0), 0);
   };
 
+  // Dynamic calculation based on toggle state
+  const calculateFirstNine = (playerId) => {
+    if (!scores[playerId] || !course) return 0;
+    const start = showBackNineFirst ? 9 : 0;
+    const end = showBackNineFirst ? 18 : 9;
+    return course.holes.slice(start, end).reduce((sum, hole) => 
+      sum + (scores[playerId][hole.hole] || 0), 0);
+  };
+
+  const calculateSecondNine = (playerId) => {
+    if (!scores[playerId] || !course) return 0;
+    const start = showBackNineFirst ? 0 : 9;
+    const end = showBackNineFirst ? 9 : 18;
+    return course.holes.slice(start, end).reduce((sum, hole) => 
+      sum + (scores[playerId][hole.hole] || 0), 0);
+  };
+
   const getScoreLabel = (score, par) => {
     const diff = score - par;
     if (score === 1) return 'Hole-in-One';
@@ -1307,7 +1324,7 @@ function GamePlay() {
               <tr className="total-row">
                 <td className="hole-par-col-vertical"><strong>{showBackNineFirst ? '10-18' : '1-9'}</strong></td>
                 {sortedPlayers.map((player, index) => {
-                  const scoreTotal = calculateFront9(player.id);
+                  const scoreTotal = calculateFirstNine(player.id);
                   
                   // Calculate Over/Under Par
                   let overUnderPar = 0;
@@ -1597,7 +1614,7 @@ function GamePlay() {
               <tr className="total-row">
                 <td className="hole-par-col-vertical"><strong>{showBackNineFirst ? '1-9' : '10-18'}</strong></td>
                 {sortedPlayers.map((player, index) => {
-                  const scoreTotal = calculateBack9(player.id);
+                  const scoreTotal = calculateSecondNine(player.id);
                   
                   // Calculate Over/Under Par
                   let overUnderPar = 0;
