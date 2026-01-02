@@ -21,7 +21,7 @@ function AnimalInputModal({
   // Initialize animal counts for each player
   const [animalCounts, setAnimalCounts] = useState({});
 
-  const [showPicker, setShowPicker] = useState(null); // {playerId, animalType}
+  const [showNumberPicker, setShowNumberPicker] = useState(null); // {playerId, animalType, currentValue}
 
   // Reset state when modal opens or currentAnimalScores changes
   useEffect(() => {
@@ -44,7 +44,9 @@ function AnimalInputModal({
 
   if (!isOpen) return null;
 
-  const handleNumberSelect = (playerId, animalType, value) => {
+  const handleNumberSelect = (value) => {
+    if (!showNumberPicker) return;
+    const { playerId, animalType } = showNumberPicker;
     setAnimalCounts(prev => ({
       ...prev,
       [playerId]: {
@@ -52,27 +54,7 @@ function AnimalInputModal({
         [animalType]: value
       }
     }));
-    setShowPicker(null);
-  };
-
-  const handleIncrement = (playerId, animalType) => {
-    setAnimalCounts(prev => ({
-      ...prev,
-      [playerId]: {
-        ...prev[playerId],
-        [animalType]: (prev[playerId][animalType] || 0) + 1
-      }
-    }));
-  };
-
-  const handleDecrement = (playerId, animalType) => {
-    setAnimalCounts(prev => ({
-      ...prev,
-      [playerId]: {
-        ...prev[playerId],
-        [animalType]: Math.max(0, (prev[playerId][animalType] || 0) - 1)
-      }
-    }));
+    setShowNumberPicker(null);
   };
 
   const handleSave = () => {
@@ -117,31 +99,19 @@ function AnimalInputModal({
                 </div>
                 
                 {players.map(player => {
-                  const isPickerOpen = showPicker?.playerId === player.id && showPicker?.animalType === animal.type;
                   const count = animalCounts[player.id]?.[animal.type] ?? 0;
                   return (
                     <div key={player.id} className="animal-count-cell">
                       <div 
                         className="animal-count-display"
-                        onClick={() => setShowPicker({ playerId: player.id, animalType: animal.type })}
+                        onClick={() => setShowNumberPicker({ 
+                          playerId: player.id, 
+                          animalType: animal.type,
+                          currentValue: count
+                        })}
                       >
                         {count}
                       </div>
-                      {isPickerOpen && (
-                        <div className="number-picker-dropdown">
-                          <div className="number-picker-scroll">
-                            {Array.from({ length: 11 }, (_, i) => i).map(num => (
-                              <button
-                                key={num}
-                                className={`number-option ${animalCounts[player.id][animal.type] === num ? 'selected' : ''}`}
-                                onClick={() => handleNumberSelect(player.id, animal.type, num)}
-                              >
-                                {num}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
                     </div>
                   );
                 })}
@@ -159,6 +129,28 @@ function AnimalInputModal({
           </button>
         </div>
       </div>
+
+      {/* Number Picker Modal */}
+      {showNumberPicker && (
+        <div className="animal-number-picker-overlay" onClick={() => setShowNumberPicker(null)}>
+          <div className="animal-number-picker-content" onClick={(e) => e.stopPropagation()}>
+            <div className="animal-number-picker-header">
+              <h3>Select Count</h3>
+            </div>
+            <div className="animal-number-picker-grid">
+              {Array.from({ length: 11 }, (_, i) => i).map(num => (
+                <button
+                  key={num}
+                  className={`animal-number-option ${showNumberPicker.currentValue === num ? 'selected' : ''}`}
+                  onClick={() => handleNumberSelect(num)}
+                >
+                  {num}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

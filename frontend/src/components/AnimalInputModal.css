@@ -192,55 +192,84 @@
   transform: scale(0.95);
 }
 
-/* Number Picker Dropdown */
-.number-picker-dropdown {
-  position: absolute;
-  top: calc(100% - 10px);
-  left: 50%;
-  transform: translateX(-50%);
-  background: white;
-  border: 2px solid var(--color-primary);
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  z-index: 1000;
-  max-height: 350px;
-  overflow: hidden;
-}
-
-.number-picker-scroll {
+/* Animal Number Picker Modal */
+.animal-number-picker-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
   display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  max-height: 350px;
+  align-items: center;
+  justify-content: center;
+  z-index: 4000;
+  padding: 1rem;
 }
 
-.number-option {
-  padding: 1.2rem 3rem;
-  border: none;
+.animal-number-picker-content {
   background: white;
-  font-size: 2rem;
+  border-radius: 16px;
+  max-width: 500px;
+  width: 100%;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.animal-number-picker-header {
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  text-align: center;
+}
+
+.animal-number-picker-header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.animal-number-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  padding: 2rem;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.animal-number-option {
+  padding: 1.5rem;
+  border: 3px solid var(--color-primary);
+  background: white;
+  font-size: 2.5rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
-  border-bottom: 1px solid #e0e0e0;
-  color: var(--color-text);
-  text-align: center;
-  min-width: 120px;
-}
-
-.number-option:hover {
-  background: #f0f4ff;
+  border-radius: 12px;
   color: var(--color-primary);
+  text-align: center;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.number-option.selected {
+.animal-number-option:hover {
+  background: #f0f4ff;
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.animal-number-option.selected {
   background: var(--color-primary);
   color: white;
-  font-weight: 700;
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
 }
 
-.number-option:last-child {
-  border-bottom: none;
+.animal-number-option:active {
+  transform: scale(0.95);
 }
 
 .btn-decrement {
