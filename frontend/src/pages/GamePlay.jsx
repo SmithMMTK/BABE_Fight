@@ -825,17 +825,6 @@ function GamePlay() {
                 ))}
               </select>
             )}
-            <button
-              className="btn-toggle-holes"
-              onClick={() => setShowBackNineFirst(!showBackNineFirst)}
-              aria-label="สลับลำดับการแสดงหลุม"
-              title="กดเพื่อสลับลำดับหลุม"
-              style={{marginTop: '0.75rem'}}
-            >
-              <span className="toggle-icon">🔄</span>
-              <span className="toggle-label">แสดง:</span>
-              <span className="toggle-text">{showBackNineFirst ? 'Back-Front' : 'Front-Back'}</span>
-            </button>
           </div>
           <button 
             className="btn-hamburger-menu" 
@@ -864,6 +853,15 @@ function GamePlay() {
                 </button>
               </div>
               <div className="hamburger-menu-items">
+                <button 
+                  className="hamburger-menu-item"
+                  onClick={() => {
+                    setShowBackNineFirst(!showBackNineFirst);
+                  }}
+                >
+                  <span className="menu-icon">🔄</span>
+                  <span>แสดง: {showBackNineFirst ? 'Back-Front' : 'Front-Back'}</span>
+                </button>
                 <button 
                   className="hamburger-menu-item"
                   onClick={() => {
