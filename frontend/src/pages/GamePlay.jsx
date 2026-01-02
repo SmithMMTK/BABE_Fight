@@ -58,6 +58,19 @@ function GamePlay() {
   const sessionData = getSession();
   const { isHost, hostPin, guestPin, username } = sessionData || {};
 
+  // Load toggle state from localStorage on mount
+  useEffect(() => {
+    const savedToggle = localStorage.getItem(`showBackNineFirst_${gameId}`);
+    if (savedToggle !== null) {
+      setShowBackNineFirst(savedToggle === 'true');
+    }
+  }, [gameId]);
+
+  // Save toggle state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem(`showBackNineFirst_${gameId}`, showBackNineFirst.toString());
+  }, [showBackNineFirst, gameId]);
+
   // Calculate stroke allocation for H2H handicap
   // Use H2H matrix from server if available, otherwise calculate from player handicaps
   const strokeAllocation = useMemo(() => {
@@ -813,6 +826,15 @@ function GamePlay() {
               </select>
             )}
           </div>
+          <button
+            className="btn-toggle-holes"
+            onClick={() => setShowBackNineFirst(!showBackNineFirst)}
+            aria-label="สลับลำดับการแสดงหลุม"
+            title={showBackNineFirst ? 'แสดง 1-9 → 10-18' : 'แสดง 10-18 → 1-9'}
+          >
+            <span className="toggle-icon">🔄</span>
+            <span className="toggle-text">{showBackNineFirst ? '10-18 → 1-9' : '1-9 → 10-18'}</span>
+          </button>
           <button 
             className="btn-hamburger-menu" 
             onClick={() => setShowHamburgerMenu(!showHamburgerMenu)}
@@ -889,16 +911,6 @@ function GamePlay() {
                 >
                   <span className="menu-icon">🐾</span>
                   <span>สรุป Animal Scores</span>
-                </button>
-                <button 
-                  className="hamburger-menu-item"
-                  onClick={() => {
-                    setShowBackNineFirst(!showBackNineFirst);
-                    setShowHamburgerMenu(false);
-                  }}
-                >
-                  <span className="menu-icon">🔄</span>
-                  <span>{showBackNineFirst ? 'แสดง 1-9 → 10-18' : 'แสดง 10-18 → 1-9'}</span>
                 </button>
                 <button 
                   className="hamburger-menu-item"

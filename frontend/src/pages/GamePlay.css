@@ -59,6 +59,58 @@
   text-overflow: ellipsis;
 }
 
+/* Toggle Holes Button */
+.btn-toggle-holes {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  margin-right: 0.5rem;
+}
+
+.btn-toggle-holes:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn-toggle-holes:active {
+  transform: translateY(0);
+}
+
+.toggle-icon {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.toggle-text {
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .btn-toggle-holes {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+  }
+  
+  .toggle-text {
+    display: none;
+  }
+  
+  .toggle-icon {
+    font-size: 1.5rem;
+  }
+}
+
 .btn-hamburger-menu {
   background: transparent;
   color: var(--color-primary);
