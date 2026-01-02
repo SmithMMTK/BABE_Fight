@@ -1303,9 +1303,9 @@ function GamePlay() {
                   })}
                 </tr>
               ))}
-              {/* Front 9 Total - Gross Score with O/U Par */}
+              {/* First Nine Total - Gross Score with O/U Par */}
               <tr className="total-row">
-                <td className="hole-par-col-vertical"><strong>1-9</strong></td>
+                <td className="hole-par-col-vertical"><strong>{showBackNineFirst ? '10-18' : '1-9'}</strong></td>
                 {sortedPlayers.map((player, index) => {
                   const scoreTotal = calculateFront9(player.id);
                   
@@ -1593,9 +1593,9 @@ function GamePlay() {
                   })}
                 </tr>
               ))}
-              {/* Back 9 Total - Gross Score with O/U Par */}
+              {/* Second Nine Total - Gross Score with O/U Par */}
               <tr className="total-row">
-                <td className="hole-par-col-vertical"><strong>10-18</strong></td>
+                <td className="hole-par-col-vertical"><strong>{showBackNineFirst ? '1-9' : '10-18'}</strong></td>
                 {sortedPlayers.map((player, index) => {
                   const scoreTotal = calculateBack9(player.id);
                   

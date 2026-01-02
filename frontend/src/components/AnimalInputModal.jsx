@@ -130,7 +130,7 @@ function AnimalInputModal({
                       {isPickerOpen && (
                         <div className="number-picker-dropdown">
                           <div className="number-picker-scroll">
-                            {Array.from({ length: 21 }, (_, i) => i).map(num => (
+                            {Array.from({ length: 11 }, (_, i) => i).map(num => (
                               <button
                                 key={num}
                                 className={`number-option ${animalCounts[player.id][animal.type] === num ? 'selected' : ''}`}
