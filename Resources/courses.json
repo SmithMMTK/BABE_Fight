@@ -1,4 +1,84 @@
 [
+  
+  {
+    "id": "thanya_golf_ab",
+    "name": "Thanya Golf (A-B)",
+    "holes": [
+      { "hole": 1,  "par": 4, "hc": 9 },
+      { "hole": 2,  "par": 4, "hc": 4 },
+      { "hole": 3,  "par": 3, "hc": 7 },
+      { "hole": 4,  "par": 5, "hc": 2 },
+      { "hole": 5,  "par": 4, "hc": 3 },
+      { "hole": 6,  "par": 4, "hc": 5 },
+      { "hole": 7,  "par": 5, "hc": 1 },
+      { "hole": 8,  "par": 3, "hc": 8 },
+      { "hole": 9,  "par": 4, "hc": 6 },
+
+      { "hole": 10, "par": 5, "hc": 1 },
+      { "hole": 11, "par": 4, "hc": 9 },
+      { "hole": 12, "par": 4, "hc": 5 },
+      { "hole": 13, "par": 3, "hc": 7 },
+      { "hole": 14, "par": 4, "hc": 6 },
+      { "hole": 15, "par": 4, "hc": 4 },
+      { "hole": 16, "par": 3, "hc": 8 },
+      { "hole": 17, "par": 5, "hc": 3 },
+      { "hole": 18, "par": 4, "hc": 2 }
+    ]
+  },
+
+  {
+    "id": "thanya_golf_ac",
+    "name": "Thanya Golf (A-C)",
+    "holes": [
+      { "hole": 1,  "par": 4, "hc": 9 },
+      { "hole": 2,  "par": 4, "hc": 4 },
+      { "hole": 3,  "par": 3, "hc": 7 },
+      { "hole": 4,  "par": 5, "hc": 2 },
+      { "hole": 5,  "par": 4, "hc": 3 },
+      { "hole": 6,  "par": 4, "hc": 5 },
+      { "hole": 7,  "par": 5, "hc": 1 },
+      { "hole": 8,  "par": 3, "hc": 8 },
+      { "hole": 9,  "par": 4, "hc": 6 },
+
+      { "hole": 10, "par": 4, "hc": 2 },
+      { "hole": 11, "par": 3, "hc": 8 },
+      { "hole": 12, "par": 5, "hc": 4 },
+      { "hole": 13, "par": 4, "hc": 6 },
+      { "hole": 14, "par": 5, "hc": 1 },
+      { "hole": 15, "par": 3, "hc": 7 },
+      { "hole": 16, "par": 4, "hc": 5 },
+      { "hole": 17, "par": 4, "hc": 9 },
+      { "hole": 18, "par": 4, "hc": 3 }
+    ]
+  },
+
+  {
+    "id": "thanya_golf_bc",
+    "name": "Thanya Golf (B-C)",
+    "holes": [
+      { "hole": 1,  "par": 5, "hc": 1 },
+      { "hole": 2,  "par": 4, "hc": 9 },
+      { "hole": 3,  "par": 4, "hc": 5 },
+      { "hole": 4,  "par": 3, "hc": 7 },
+      { "hole": 5,  "par": 4, "hc": 6 },
+      { "hole": 6,  "par": 4, "hc": 4 },
+      { "hole": 7,  "par": 3, "hc": 8 },
+      { "hole": 8,  "par": 5, "hc": 3 },
+      { "hole": 9,  "par": 4, "hc": 2 },
+
+      { "hole": 10, "par": 4, "hc": 2 },
+      { "hole": 11, "par": 3, "hc": 8 },
+      { "hole": 12, "par": 5, "hc": 4 },
+      { "hole": 13, "par": 4, "hc": 6 },
+      { "hole": 14, "par": 5, "hc": 1 },
+      { "hole": 15, "par": 3, "hc": 7 },
+      { "hole": 16, "par": 4, "hc": 5 },
+      { "hole": 17, "par": 4, "hc": 9 },
+      { "hole": 18, "par": 4, "hc": 3 }
+    ]
+  },
+  
+  
   {
   "id": "alpine_golf_sports_club",
   "name": "Alpine Golf & Sports Club",
