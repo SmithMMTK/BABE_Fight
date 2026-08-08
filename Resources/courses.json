@@ -3,9 +3,6 @@
   {
     "id" : "Northen_rangsit",
   "name": "นอร์ธเทิร์น รังสิต กอล์ฟคลับ",
-  "area": "อยุธยา",
-  "phone": "0819940951",
-  "par_total": 72,
   "holes": [
     {"hole": 1, "par": 4, "hc": 12},
     {"hole": 2, "par": 5, "hc": 3},
