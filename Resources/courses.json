@@ -1,5 +1,32 @@
 [
   
+  
+{
+  "id": "windsor_park_golf_club_a_b",
+  "name": "สนามกอล์ฟวินด์เซอร์พาร์ค A-B",
+  "holes": [
+    {"hole": 1, "par": 4, "hc": 3},
+    {"hole": 2, "par": 4, "hc": 6},
+    {"hole": 3, "par": 4, "hc": 5},
+    {"hole": 4, "par": 5, "hc": 4},
+    {"hole": 5, "par": 3, "hc": 8},
+    {"hole": 6, "par": 5, "hc": 7},
+    {"hole": 7, "par": 3, "hc": 9},
+    {"hole": 8, "par": 4, "hc": 1},
+    {"hole": 9, "par": 4, "hc": 2},
+    {"hole": 10, "par": 4, "hc": 2},
+    {"hole": 11, "par": 4, "hc": 5},
+    {"hole": 12, "par": 3, "hc": 9},
+    {"hole": 13, "par": 5, "hc": 7},
+    {"hole": 14, "par": 3, "hc": 8},
+    {"hole": 15, "par": 4, "hc": 1},
+    {"hole": 16, "par": 5, "hc": 6},
+    {"hole": 17, "par": 4, "hc": 4},
+    {"hole": 18, "par": 4, "hc": 3}
+  ]
+}
+,
+  
 {
   "id": "rose_garden_golf_club",
   "name": "สนามกอล์ฟโรสการ์เด้น",
